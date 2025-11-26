@@ -236,7 +236,7 @@
 </main>
 
 <footer>
-  Privat familjearkiv – publicerat via GitHub Pages. Version: 1.00 (2025-11-26)
+  Privat familjearkiv – publicerat via GitHub Pages. Version: 1.01 (2025-11-26)
 </footer>
 
 <script>
@@ -287,18 +287,18 @@
           ? `style="background-image:url('${album.id}/${album.cover}');"`
           : "";
 
-        link.innerHTML = `
-          <div class="cover" ${coverStyle}></div>
-          <div class="card-inner">
-            <h2>📖 <span>${album.title}</span></h2>
-            <div class="meta">
-              <span class="year">${album.year}</span>
-              <span class="badge">${labelForCategory(album.category)}</span>
-            </div>
-            <p>${album.description}</p>
-            <div class="open-btn">Öppna album →</div>
-          </div>
-        `;
+    link.innerHTML = `
+      <div class="card-inner">
+        ${album.cover ? `<div class="cover" ${coverStyle}></div>` : ""}
+        <h2>📖 <span>${album.title}</span></h2>
+        <div class="meta">
+          <span class="year">${album.year}</span>
+          <span class="badge">${labelForCategory(album.category)}</span>
+        </div>
+        <p>${album.description}</p>
+        <div class="open-btn">Öppna album →</div>
+      </div>
+    `;
 
         grid.appendChild(link);
       });
