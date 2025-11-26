@@ -178,14 +178,14 @@
     }
 
     .cover {
-      position: absolute;
-      inset: 0;
-      opacity: 0.35;              /* lagom synlig bakgrund */
-      background-size: cover;
+      width: 100%;
+      padding-top: 70%;              /* 70 % höjd → 7:10-format miniatyr */
+      background-size: contain;      /* visa hela omslaget */
       background-position: center;
-      filter: blur(2px);          /* lite mjukt, men inte suddigt */
-      transform: scale(1.03);
-      pointer-events: none;
+      background-repeat: no-repeat;
+      background-color: #000;        /* svart bakgrund runtom vid behov */
+      border-radius: 10px;
+      margin-bottom: 8px;
     }
 
     .card-inner {
@@ -193,10 +193,7 @@
       z-index: 1;
       padding: 10px;
       border-radius: 12px;
-      background: radial-gradient(circle at top,
-                  rgba(0,0,0,0.65) 0,
-                  rgba(0,0,0,0.9) 60%);
-      backdrop-filter: blur(2px);
+      background: rgba(0,0,0,0.85);   /* mörk men enkel bakgrund */
     }
 
     footer {
