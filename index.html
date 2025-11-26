@@ -109,19 +109,18 @@
     }
 
     .card {
+      display: grid;
+      grid-template-columns: 90px 1fr;   /* miniatyrvänster + text till höger */
+      gap: 12px;
       background: rgba(15,15,15,0.9);
       border-radius: 14px;
       border: 1px solid #333;
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+      padding: 10px;
       cursor: pointer;
       transition: transform 0.12s ease-out, box-shadow 0.12s ease-out, border-color 0.12s ease-out;
       text-decoration: none;
       color: inherit;
-      position: relative;
-      overflow: hidden;
+      align-items: center;
     }
 
     .card:hover {
@@ -179,21 +178,18 @@
 
     .cover {
       width: 100%;
-      height: 90px;
-      background-size: contain;      /* visa hela omslaget */
+      height: 90px;                /* samma som grid-kolumnens bredd */
+      background-size: cover;      /* eller contain */
       background-position: center;
       background-repeat: no-repeat;
-      background-color: #000;        /* svart bakgrund runtom vid behov */
       border-radius: 8px;
-      margin-bottom: 6px;
+      background-color: #000;
     }
 
     .card-inner {
-      position: relative;
-      z-index: 1;
-      padding: 8px;
-      border-radius: 12px;
-      background: rgba(0,0,0,0.85);   /* mörk men enkel bakgrund */
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
 
     footer {
@@ -233,7 +229,7 @@
 </main>
 
 <footer>
-  Privat familjearkiv – publicerat via GitHub Pages. Version: 1.01 (2025-11-26)
+  Privat familjearkiv – publicerat via GitHub Pages. Version: 1.02 (2025-11-27)
 </footer>
 
 <script>
@@ -285,15 +281,14 @@
           : "";
 
     link.innerHTML = `
+      <div class="cover" style="background-image:url('${album.cover}')"></div>
       <div class="card-inner">
-        ${album.cover ? `<div class="cover" ${coverStyle}></div>` : ""}
         <h2>📖 <span>${album.title}</span></h2>
         <div class="meta">
           <span class="year">${album.year}</span>
           <span class="badge">${labelForCategory(album.category)}</span>
         </div>
         <p>${album.description}</p>
-        <div class="open-btn">Öppna album →</div>
       </div>
     `;
 
