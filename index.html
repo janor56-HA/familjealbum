@@ -280,8 +280,10 @@
           ? `style="background-image:url('${album.id}/${album.cover}');"`
           : "";
 
+    const coverUrl = `${album.id}/${album.cover}`;
+
     link.innerHTML = `
-      <div class="cover" style="background-image:url('${album.cover}')"></div>
+       <div class="cover" style="background-image:url('${coverUrl}')"></div>
       <div class="card-inner">
         <h2>📖 <span>${album.title}</span></h2>
         <div class="meta">
