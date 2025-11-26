@@ -48,11 +48,64 @@
       margin: 0 auto;
     }
 
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-top: 12px;
+      margin-bottom: 8px;
+    }
+
+    .search {
+      flex: 1 1 200px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(20,20,20,0.9);
+      border-radius: 999px;
+      padding: 4px 10px;
+      border: 1px solid #333;
+    }
+
+    .search input {
+      border: none;
+      outline: none;
+      background: transparent;
+      color: inherit;
+      padding: 4px;
+      width: 100%;
+      font-size: 0.9rem;
+    }
+
+    .badge-filter {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .pill {
+      font-size: 0.8rem;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid #444;
+      background: rgba(15,15,15,0.9);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .pill.active {
+      border-color: #888;
+      background: rgba(40,40,40,0.95);
+    }
+
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
       gap: 16px;
-      margin-top: 12px;
+      margin-top: 16px;
     }
 
     .card {
@@ -65,6 +118,10 @@
       gap: 8px;
       cursor: pointer;
       transition: transform 0.12s ease-out, box-shadow 0.12s ease-out, border-color 0.12s ease-out;
+      text-decoration: none;
+      color: inherit;
+      position: relative;
+      overflow: hidden;
     }
 
     .card:hover {
@@ -83,7 +140,15 @@
 
     .card p {
       margin: 0;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
       opacity: 0.85;
     }
 
@@ -93,11 +158,39 @@
       border-radius: 999px;
       border: 1px solid #444;
       background: rgba(30,30,30,0.9);
+      align-self: flex-start;
     }
 
     .year {
       font-weight: 600;
-      opacity: 0.9;
+    }
+
+    .open-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      border-radius: 999px;
+      border: 1px solid #555;
+      background: rgba(60,60,60,0.9);
+      margin-top: 4px;
+    }
+
+    .cover {
+      position: absolute;
+      inset: 0;
+      opacity: 0.15;
+      background-size: cover;
+      background-position: center;
+      filter: blur(4px);
+      transform: scale(1.05);
+      pointer-events: none;
+    }
+
+    .card-inner {
+      position: relative;
+      z-index: 1;
     }
 
     footer {
@@ -115,62 +208,120 @@
 </head>
 <body>
 <header>
-  <h1>📚 Familjealbum – Översikt</h1>
+  <h1>📚 Familjealbum</h1>
   <p>Klicka på ett album för att öppna det. Fungerar på både dator och mobil.</p>
 </header>
 
 <main>
-  <div class="grid" id="albumGrid">
-    <!-- Fylls via JavaScript nedan -->
+  <div class="toolbar">
+    <div class="search">
+      <span>🔍</span>
+      <input id="searchInput" type="text" placeholder="Sök album (titel, år, beskrivning)..." />
+    </div>
+    <div class="badge-filter">
+      <button class="pill active" data-filter="all">Alla</button>
+      <button class="pill" data-filter="barn">👶 Barn & uppväxt</button>
+      <button class="pill" data-filter="hogtid">🎉 Högtider</button>
+      <button class="pill" data-filter="resa">✈️ Resor</button>
+    </div>
   </div>
+
+  <div class="grid" id="albumGrid"></div>
 </main>
 
 <footer>
-  Privat familjearkiv – lagras på GitHub.
+  Privat familjearkiv – publicerat via GitHub Pages.
 </footer>
 
 <script>
-  // Här lägger du till dina album – ett objekt per album
+  // === Här lägger du in dina album ===
   const albums = [
     {
-      id: "jans_fyra_forsta_ar",
-      title: "Familjealbum 1956-1960",
-      description: "Jans först fyra år, 1956-1960.",
-      year: "1956"
-    },
-    {
-      id: "album_10",
-      title: "Familjealbum 10",
-      description: "Somrar, resor och kalas.",
-      year: "1980"
-    },
-    {
-      id: "album_45",
-      title: "Seglingar på Mälaren",
-      description: "Somrar på vattnet med ESS och familjen.",
-      year: "1990–1999"
+      id: "jans-fyra-forsta-ar",          // mappnamn
+      title: "Jans fyra första år",
+      description: "De första åren samlade i ett bläddringsbart album.",
+      year: "1956–1960",
+      category: "barn",                    // barn / hogtid / resa / annat
+      cover: "images/page-01.jpg"         // relativt album-mappen
     }
-    // Lägg till fler album här
+    // Lägg till fler objekt:
+    // {
+    //   id: "anders-konfirmation",
+    //   title: "Anders konfirmation",
+    //   description: "Konfirmation och firande med släkten.",
+    //   year: "1982",
+    //   category: "hogtid",
+    //   cover: "images/page-01.jpg"
+    // }
   ];
 
   const grid = document.getElementById('albumGrid');
+  const searchInput = document.getElementById('searchInput');
+  const filterButtons = Array.from(document.querySelectorAll('.pill'));
 
-  albums.forEach(album => {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.onclick = () => {
-      window.location.href = `${album.id}/index.html`;
-    };
+  function renderAlbums() {
+    const term = searchInput.value.toLowerCase().trim();
+    const activeFilter = filterButtons.find(b => b.classList.contains('active'))?.dataset.filter || 'all';
 
-    card.innerHTML = `
-      <h2>📖 <span class="title">${album.title}</span></h2>
-      <p><span class="year">${album.year}</span></p>
-      <p>${album.description}</p>
-      <span class="badge">Klicka för att öppna</span>
-    `;
+    grid.innerHTML = "";
 
-    grid.appendChild(card);
+    albums
+      .filter(album => {
+        if (activeFilter !== 'all' && album.category !== activeFilter) return false;
+        if (!term) return true;
+        const haystack = (album.title + " " + album.description + " " + album.year).toLowerCase();
+        return haystack.includes(term);
+      })
+      .forEach(album => {
+        const link = document.createElement('a');
+        link.className = 'card';
+        link.href = `${album.id}/index.html`;
+
+        const coverStyle = album.cover
+          ? `style="background-image:url('${album.id}/${album.cover}');"`
+          : "";
+
+        link.innerHTML = `
+          <div class="cover" ${coverStyle}></div>
+          <div class="card-inner">
+            <h2>📖 <span>${album.title}</span></h2>
+            <div class="meta">
+              <span class="year">${album.year}</span>
+              <span class="badge">${labelForCategory(album.category)}</span>
+            </div>
+            <p>${album.description}</p>
+            <div class="open-btn">Öppna album →</div>
+          </div>
+        `;
+
+        grid.appendChild(link);
+      });
+
+    if (!grid.children.length) {
+      grid.innerHTML = `<p style="opacity:0.8;">Inga album matchade sökningen.</p>`;
+    }
+  }
+
+  function labelForCategory(cat) {
+    switch (cat) {
+      case "barn": return "Barn & uppväxt";
+      case "hogtid": return "Högtider";
+      case "resa": return "Resor";
+      default: return "Övrigt";
+    }
+  }
+
+  searchInput.addEventListener('input', () => renderAlbums());
+
+  filterButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderAlbums();
+    });
   });
+
+  renderAlbums();
 </script>
 </body>
 </html>
