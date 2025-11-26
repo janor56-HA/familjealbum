@@ -180,18 +180,23 @@
     .cover {
       position: absolute;
       inset: 0;
-      opacity: 1;
+      opacity: 0.35;              /* lagom synlig bakgrund */
       background-size: cover;
       background-position: center;
-      filter: none;
-      transform: none;
+      filter: blur(2px);          /* lite mjukt, men inte suddigt */
+      transform: scale(1.03);
       pointer-events: none;
-      border: 2px solid red;
     }
 
     .card-inner {
       position: relative;
       z-index: 1;
+      padding: 10px;
+      border-radius: 12px;
+      background: radial-gradient(circle at top,
+                  rgba(0,0,0,0.65) 0,
+                  rgba(0,0,0,0.9) 60%);
+      backdrop-filter: blur(2px);
     }
 
     footer {
