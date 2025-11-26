@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <title>Familjealbum – Översikt</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #222 0, #050505 55%);
+      color: #f5f5f5;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
+                   Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #333;
+      background: rgba(5,5,5,0.9);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header h1 {
+      margin: 0 0 4px;
+      font-size: 1.4rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    header p {
+      margin: 0;
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+
+    main {
+      padding: 16px 20px 32px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 12px;
+    }
+
+    .card {
+      background: rgba(15,15,15,0.9);
+      border-radius: 14px;
+      border: 1px solid #333;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform 0.12s ease-out, box-shadow 0.12s ease-out, border-color 0.12s ease-out;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      border-color: #555;
+    }
+
+    .card h2 {
+      margin: 0;
+      font-size: 1.05rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .card p {
+      margin: 0;
+      font-size: 0.85rem;
+      opacity: 0.85;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid #444;
+      background: rgba(30,30,30,0.9);
+    }
+
+    .year {
+      font-weight: 600;
+      opacity: 0.9;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.8rem;
+      padding: 12px 8px 18px;
+      opacity: 0.7;
+    }
+
+    @media (max-width: 600px) {
+      header h1 { font-size: 1.2rem; }
+      main { padding: 12px 12px 24px; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>📚 Familjealbum – Översikt</h1>
+  <p>Klicka på ett album för att öppna det. Fungerar på både dator och mobil.</p>
+</header>
+
+<main>
+  <div class="grid" id="albumGrid">
+    <!-- Fylls via JavaScript nedan -->
+  </div>
+</main>
+
+<footer>
+  Privat familjearkiv – lagras lokalt på din Mac / hemnätverk.
+</footer>
+
+<script>
+  // Här lägger du till dina album – ett objekt per album
+  const albums = [
+    {
+      id: "jans_fyra_forsta_ar",
+      title: "Familjealbum 1956-1960",
+      description: "Jans först fyra år, 1956-1960.",
+      year: "1956"
+    },
+    {
+      id: "album_10",
+      title: "Familjealbum 10",
+      description: "Somrar, resor och kalas.",
+      year: "1980"
+    },
+    {
+      id: "album_45",
+      title: "Seglingar på Mälaren",
+      description: "Somrar på vattnet med ESS och familjen.",
+      year: "1990–1999"
+    }
+    // Lägg till fler album här
+  ];
+
+  const grid = document.getElementById('albumGrid');
+
+  albums.forEach(album => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.onclick = () => {
+      window.location.href = `${album.id}/index.html`;
+    };
+
+    card.innerHTML = `
+      <h2>📖 <span class="title">${album.title}</span></h2>
+      <p><span class="year">${album.year}</span></p>
+      <p>${album.description}</p>
+      <span class="badge">Klicka för att öppna</span>
+    `;
+
+    grid.appendChild(card);
+  });
+</script>
+</body>
+</html>
+
