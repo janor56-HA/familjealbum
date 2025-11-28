@@ -133,7 +133,9 @@
       }
     }
 
-    /* === PÄRMEN (yttre ramen runt albumet) === */
+    /* === PÄRM + RINGMEKANIK === */
+
+    /* Yttre pärm runt albumet */
     .binder {
       position: relative;
       padding: 18px 60px;                 /* avstånd runt albumet */
@@ -147,10 +149,10 @@
       place-items: center;
     }
 
-    /* Inre container (#book) */
+    /* Själva PageFlip-ytan */
     .binder #book {
       position: relative;
-      z-index: 1;                         /* ringar kan ligga över */
+      z-index: 1;                         /* ringar och stång kan ligga över */
       width: 100%;
       height: 100%;
       max-width: 1300px;
@@ -162,12 +164,12 @@
       transition: transform 0.15s ease-out;
     }
 
-    /* Stången (mittmekanik) */
+    /* Metallstången i mitten */
     .binder::before {
       content: "";
       position: absolute;
-      top: 12%;             /* höjd på hållaren */
-      bottom: 12%;
+      top: 14%;             /* höjd på hållaren – ändra efter smak */
+      bottom: 14%;
       left: 50%;
       transform: translateX(-50%);
       width: 24px;
@@ -188,14 +190,14 @@
       transition: opacity 0.25s ease;
     }
 
-    /* Container för ringarna – DEBUG: extremt synliga */
+    /* Container för ringhålen */
     .rings {
       position: absolute;
-      top: 10%;
-      bottom: 10%;
+      top: 16%;                   /* justera om du vill kortare/högre mekanik */
+      bottom: 16%;
       left: 50%;
       transform: translateX(-50%);
-      z-index: 50;                 /* över allt */
+      z-index: 4;                 /* ovanpå stången */
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -203,19 +205,28 @@
       transition: opacity 0.25s ease;
     }
 
-    /* Enskild ring – DEBUG: gul/röd */
+    /* Enskilt ringhål – ser ut som stansat hål i metall */
     .ring {
-      width: 24px;
-      height: 24px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
-      background: yellow;
-      border: 3px solid red;
+      background:
+        radial-gradient(circle at center,
+          #000 0%,               /* svart hål i mitten */
+          #000 38%,              /* hålets yta */
+          #d8d8d8 45%,           /* ljus metallkant */
+          rgba(0,0,0,0.5) 55%,   /* svag skuggring */
+          transparent 70%        /* fade ut */
+        );
+      box-shadow:
+        0 0 3px rgba(0,0,0,0.8),
+        inset 0 0 2px rgba(0,0,0,0.9);
     }
 
-    /* DEBUG: dölj aldrig mekaniken, ens på omslagen */
+    /* Dölj mekanik på framsida/baksida */
     .binder.no-rings::before,
     .binder.no-rings .rings {
-      opacity: 1;
+      opacity: 0;
     }
   </style>
 </head>
@@ -334,9 +345,16 @@
   const totalPages = PAGE_COUNT;
 
   function updateBinderRings(currentIndex) {
-    // i debug-läget gör vi faktiskt ingenting här,
-    // eftersom vi aldrig döljer ringarna
+    // 0 = framsida, totalPages - 1 = baksida
+    if (currentIndex === 0 || currentIndex === totalPages - 1) {
+      binderEl.classList.add("no-rings");
+    } else {
+      binderEl.classList.remove("no-rings");
+    }
   }
+
+  // första läget
+  updateBinderRings(pageFlip.getCurrentPageIndex());
 
   loader.style.display = "none";
   pageEl.textContent = (pageFlip.getCurrentPageIndex() + 1).toString();
@@ -396,4 +414,3 @@
 </script>
 </body>
 </html>
-
