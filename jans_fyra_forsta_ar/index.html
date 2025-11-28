@@ -163,11 +163,11 @@
       box-shadow: 0 10px 30px rgba(0,0,0,.6);
       transition: transform 0.15s ease-out;
     }
-    /* Försök tvinga PageFlip-inre element att vara mörka */
-    #book,
-    #book * {
-      background-color: transparent;
-    }
+/* Gör alla PageFlip-element transparenta om de sätter egen bakgrund */
+#book,
+#book * {
+  background-color: transparent !important;
+}
 
     /* Metallstången i mitten */
     .binder::before {
@@ -213,13 +213,13 @@
     /* Enskilt ringhål – ser ut som stansat hål i metall */
     /* Enskild ring – stående metallring */
     .ring {
-      width: 10px;
-      height: 26px;
+      width: 40px;
+      height: 10px;
       border-radius: 999px;
       border: 2px solid #e0e0e0;
       border-bottom-color: transparent;      /* öppning ner mot sidan */
       background: linear-gradient(
-        180deg,
+        90deg,
         #fdfdfd 0%,
         #cccccc 40%,
         #fdfdfd 70%,
@@ -233,6 +233,11 @@
     /* Dölj mekanik på framsida/baksida */
     .binder.no-rings::before,
     .binder.no-rings .rings {
+      opacity: 0;
+    }
+    /* Under aktiv bläddring – släck mekaniken helt */
+    .binder.hide-mech::before,
+    .binder.hide-mech .rings {
       opacity: 0;
     }
     /* Under aktiv bläddring – släck mekaniken helt */
@@ -306,6 +311,8 @@
   const pageEl = document.getElementById('page');
   const pagesEl= document.getElementById('pages');
   const bookEl = document.getElementById('book');
+const binderEl = document.querySelector(".binder");   // du har redan den längre ned
+binderEl.style.visibility = "hidden";
 
   pagesEl.textContent = PAGE_COUNT.toString();
 
@@ -354,45 +361,44 @@
 
   pageFlip.loadFromImages(images);
 
-  const binderEl = document.querySelector(".binder");
-  const totalPages = PAGE_COUNT;
+const totalPages = PAGE_COUNT;
 
-  function updateBinderRings(currentIndex) {
-    // 0 = framsida, totalPages - 1 = baksida
-    if (currentIndex === 0 || currentIndex === totalPages - 1) {
-      binderEl.classList.add("no-rings");
-    } else {
-      binderEl.classList.remove("no-rings");
-    }
+function updateBinderRings(currentIndex) {
+  // 0 = framsida, totalPages - 1 = baksida
+  if (currentIndex === 0 || currentIndex === totalPages - 1) {
+    binderEl.classList.add("no-rings");
+  } else {
+    binderEl.classList.remove("no-rings");
   }
+}
 
-  // första läget
-  updateBinderRings(pageFlip.getCurrentPageIndex());
+// första läget
+updateBinderRings(pageFlip.getCurrentPageIndex());
 
-  loader.style.display = "none";
-  pageEl.textContent = (pageFlip.getCurrentPageIndex() + 1).toString();
+loader.style.display = "none";
+binderEl.style.visibility = "visible";  // visa pärmen först nu
+pageEl.textContent = (pageFlip.getCurrentPageIndex() + 1).toString();
 
-  const FLIP_DURATION = 600; // samma som flippingTime i konfigen
-
-  pageFlip.on("flip", (e) => {
-    pageEl.textContent = (e.data + 1).toString();
-
-    // Släck mekaniken under bläddringen
-    binderEl.classList.add("hide-mech");
-
-    // När bläddringen borde vara klar: tänd igen med rätt logik (om inte omslag)
-    setTimeout(() => {
-      binderEl.classList.remove("hide-mech");
-      updateBinderRings(pageFlip.getCurrentPageIndex());
-    }, FLIP_DURATION);
-  });
+// När flip-panimationen är klar: tänd upp mekaniken igen (om inte omslag)
+pageFlip.on("flip", (e) => {
+  binderEl.classList.remove("hide-mech");          // tänd mekaniken
+  pageEl.textContent = (e.data + 1).toString();
+  updateBinderRings(e.data);
+});
 
   window.addEventListener("resize", () => {
     pageFlip.update();
   });
 
-  document.getElementById("prev").addEventListener("click", () => pageFlip.flipPrev());
-  document.getElementById("next").addEventListener("click", () => pageFlip.flipNext());
+ document.getElementById("prev").addEventListener("click", () => {
+  binderEl.classList.add("hide-mech");
+  pageFlip.flipPrev();
+});
+
+document.getElementById("next").addEventListener("click", () => {
+  binderEl.classList.add("hide-mech");
+  pageFlip.flipNext();
+});
 
   let zoom = 1;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -428,11 +434,18 @@
   });
 
   window.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowLeft")  pageFlip.flipPrev();
-    if (e.key === "ArrowRight") pageFlip.flipNext();
-    if (e.key === "+") { zoom = clamp(zoom + 0.1, 0.5, 2.2); applyZoom(); }
-    if (e.key === "-") { zoom = clamp(zoom - 0.1, 0.5, 2.2); applyZoom(); }
-  });
+  if (e.key === "ArrowLeft") {
+    binderEl.classList.add("hide-mech");
+    pageFlip.flipPrev();
+  }
+  if (e.key === "ArrowRight") {
+    binderEl.classList.add("hide-mech");
+    pageFlip.flipNext();
+  }
+  if (e.key === "+") { zoom = clamp(zoom + 0.1, 0.5, 2.2); applyZoom(); }
+  if (e.key === "-") { zoom = clamp(zoom - 0.1, 0.5, 2.2); applyZoom(); }
+});
+
 })();
 </script>
 </body>
