@@ -176,11 +176,11 @@
    .binder::before {
      content: "";
      position: absolute;
-     top: 8%;
-     bottom: 8%;
+     top: 10%;
+     bottom: 10%;
      left: 50%;
      transform: translateX(-50%);
-     width: 26px;
+     width: 24px;
      border-radius: 14px;
      background: linear-gradient(
        180deg,
@@ -191,7 +191,7 @@
        #666 100%
      );
      box-shadow:
-     0 0 10px rgba(0,0,0,0.5),
+     0 0 8px rgba(0,0,0,0.5),
           inset 0 0 4px rgba(0,0,0,0.6);
      z-index: 1;
      pointer-events: none;
@@ -202,19 +202,26 @@
    .binder::after {
      content: "";
      position: absolute;
-     top: 12%;
-     bottom: 12%;
+     top: 15%;                   /* justerbart (kortare hållare) */
+     bottom: 15%;                /* justerbart (kortare hållare) */
      left: 50%;
      transform: translateX(-50%);
-     width: 18px;
+     width: 22px;
+
+     /* Tydliga ringhål, större och ljusare */
      background-image:
-       radial-gradient(circle, #000 0, #000 28%, transparent 30%);
-     background-size: 100% 18%;
+       radial-gradient(circle at center,
+         rgba(0,0,0,1) 0%,          /* djup svärta i mitten */
+         rgba(0,0,0,1) 40%,         /* hålets area */
+         rgba(255,255,255,0.8) 55%, /* ljus ringkant */
+         rgba(0,0,0,0) 60%          /* fade utanför */
+       );
+
+     background-size: 100% 60px;   /* avstånd mellan ringar (större synlighet) */
      background-repeat: repeat-y;
-     opacity: 0.75;
+     opacity: 1;                   /* synlig! */
      pointer-events: none;
-     z-index: 2;
-     transition: opacity 0.25s ease;
+     z-index: 4;                   /* ovanpå metallstången */
    }
 
    /* Dölj ringarna på omslagssidorna */
