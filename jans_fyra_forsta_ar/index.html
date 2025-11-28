@@ -163,6 +163,11 @@
       box-shadow: 0 10px 30px rgba(0,0,0,.6);
       transition: transform 0.15s ease-out;
     }
+    /* Försök tvinga PageFlip-inre element att vara mörka */
+    #book,
+    #book * {
+      background-color: transparent;
+    }
 
     /* Metallstången i mitten */
     .binder::before {
@@ -206,21 +211,23 @@
     }
 
     /* Enskilt ringhål – ser ut som stansat hål i metall */
+    /* Enskild ring – stående metallring */
     .ring {
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background:
-        radial-gradient(circle at center,
-          #000 0%,               /* svart hål i mitten */
-          #000 38%,              /* hålets yta */
-          #d8d8d8 45%,           /* ljus metallkant */
-          rgba(0,0,0,0.5) 55%,   /* svag skuggring */
-          transparent 70%        /* fade ut */
-        );
+      width: 10px;
+      height: 26px;
+      border-radius: 999px;
+      border: 2px solid #e0e0e0;
+      border-bottom-color: transparent;      /* öppning ner mot sidan */
+      background: linear-gradient(
+        180deg,
+        #fdfdfd 0%,
+        #cccccc 40%,
+        #fdfdfd 70%,
+        #aaaaaa 100%
+      );
       box-shadow:
-        0 0 3px rgba(0,0,0,0.8),
-        inset 0 0 2px rgba(0,0,0,0.9);
+        0 0 3px rgba(0,0,0,0.7),
+        inset 0 0 2px rgba(0,0,0,0.8);
     }
 
     /* Dölj mekanik på framsida/baksida */
@@ -228,6 +235,12 @@
     .binder.no-rings .rings {
       opacity: 0;
     }
+    /* Under aktiv bläddring – släck mekaniken helt */
+    .binder.hide-mech::before,
+    .binder.hide-mech .rings {
+      opacity: 0;
+    }
+
   </style>
 </head>
 <body>
@@ -359,9 +372,19 @@
   loader.style.display = "none";
   pageEl.textContent = (pageFlip.getCurrentPageIndex() + 1).toString();
 
+  const FLIP_DURATION = 600; // samma som flippingTime i konfigen
+
   pageFlip.on("flip", (e) => {
     pageEl.textContent = (e.data + 1).toString();
-    updateBinderRings(e.data);
+
+    // Släck mekaniken under bläddringen
+    binderEl.classList.add("hide-mech");
+
+    // När bläddringen borde vara klar: tänd igen med rätt logik (om inte omslag)
+    setTimeout(() => {
+      binderEl.classList.remove("hide-mech");
+      updateBinderRings(pageFlip.getCurrentPageIndex());
+    }, FLIP_DURATION);
   });
 
   window.addEventListener("resize", () => {
