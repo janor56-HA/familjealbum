@@ -375,6 +375,8 @@ updateBinderRings(pageFlip.getCurrentPageIndex());
 
 loader.style.display = "none";
 binderEl.style.visibility = "visible";  // visa pärmen först nu
+zoom = 1.3;
+applyZoom();
 pageEl.textContent = (pageFlip.getCurrentPageIndex() + 1).toString();
 
 // När flip-panimationen är klar: tänd upp mekaniken igen (om inte omslag)
@@ -388,21 +390,21 @@ pageFlip.on("flip", (e) => {
     pageFlip.update();
   });
 
- document.getElementById("prev").addEventListener("click", () => {
-  binderEl.classList.add("hide-mech");
-  pageFlip.flipPrev();
-});
+  document.getElementById("prev").addEventListener("click", () => {
+    binderEl.classList.add("hide-mech");
+    pageFlip.flipPrev();
+  });
 
-document.getElementById("next").addEventListener("click", () => {
-  binderEl.classList.add("hide-mech");
-  pageFlip.flipNext();
-});
+  document.getElementById("next").addEventListener("click", () => {
+    binderEl.classList.add("hide-mech");
+    pageFlip.flipNext();
+  });
 
   let zoom = 1;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   function applyZoom() {
-    bookEl.style.transformOrigin = "center center";
-    bookEl.style.transform = `scale(${zoom})`;
+    binderEl.style.transformOrigin = "center center";
+    binderEl.style.transform = `scale(${zoom})`;
   }
   document.getElementById("zoomIn").addEventListener("click", () => {
     zoom = clamp(zoom + 0.1, 0.5, 2.2);
