@@ -164,12 +164,14 @@
 
    /* Inre container (#book) – styrs nu via binder */
    .binder #book {
+     position: relative;
+     z-index: 1;
      width: 100%;
      height: 100%;
      max-width: 1300px;
      max-height: 90vh;
      border-radius: 10px;
-     overflow: hidden;
+     overflow: visible;
    }
 
    /* === RINGMEKANIK – metallstång i mitten === */
@@ -193,7 +195,7 @@
      box-shadow:
      0 0 8px rgba(0,0,0,0.5),
           inset 0 0 4px rgba(0,0,0,0.6);
-     z-index: 1;
+     z-index: 5;
      pointer-events: none;
      transition: opacity 0.25s ease;
    }
@@ -221,7 +223,7 @@
      background-repeat: repeat-y;
      opacity: 1;                   /* synlig! */
      pointer-events: none;
-     z-index: 4;                   /* ovanpå metallstången */
+     z-index: 6;                   /* ovanpå metallstången */
    }
 
    /* Dölj ringarna på omslagssidorna */
@@ -332,8 +334,9 @@
     drawShadow: true,
     flippingTime: 600,
     showCover: true,
-    usePortrait: true,
-    autoSize: true,
+    usePortrait: false,
+    autoSize: false,
+    gutter: 60,
     startPage: 0,
     mobileScrollSupport: false
   });
