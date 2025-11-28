@@ -188,14 +188,14 @@
       transition: opacity 0.25s ease;
     }
 
-    /* Container för ringarna */
+    /* Container för ringarna – DEBUG: extremt synliga */
     .rings {
       position: absolute;
-      top: 14%;             /* justera om du vill kortare/högre mekanik */
-      bottom: 14%;
+      top: 10%;
+      bottom: 10%;
       left: 50%;
       transform: translateX(-50%);
-      z-index: 3;
+      z-index: 50;                 /* över allt */
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -203,26 +203,19 @@
       transition: opacity 0.25s ease;
     }
 
-    /* Enskild ring / hål */
+    /* Enskild ring – DEBUG: gul/röd */
     .ring {
-      width: 20px;
-      height: 20px;
+      width: 24px;
+      height: 24px;
       border-radius: 50%;
-      box-shadow:
-        0 0 3px rgba(0,0,0,0.8),
-        inset 0 0 4px rgba(0,0,0,0.9);
-      background:
-        radial-gradient(circle at center,
-          #000 0%,
-          #000 40%,
-          rgba(255,255,255,0.85) 60%,
-          rgba(0,0,0,0) 70%);
+      background: yellow;
+      border: 3px solid red;
     }
 
-    /* Dölj mekanik på omslagssidorna */
+    /* DEBUG: dölj aldrig mekaniken, ens på omslagen */
     .binder.no-rings::before,
     .binder.no-rings .rings {
-      opacity: 0;
+      opacity: 1;
     }
   </style>
 </head>
@@ -279,12 +272,9 @@
 
 <script>
 (async function () {
-  // === Anpassa dessa per album ===
-  const PAGE_COUNT = 58;          // antal sidor i albumet
-  const IMAGE_PATH = "images";    // mappen där JPG-filerna ligger
+  const PAGE_COUNT = 58;
+  const IMAGE_PATH = "images";
   const FILE_PATTERN = i => `${IMAGE_PATH}/page-${i}.jpg`;
-  // Om du döper till page-01.jpg osv kan du använda:
-  // const FILE_PATTERN = i => `${IMAGE_PATH}/page-${String(i).padStart(2,'0')}.jpg`;
 
   const loader = document.getElementById('loader');
   const prog   = document.getElementById('prog');
@@ -295,7 +285,6 @@
 
   pagesEl.textContent = PAGE_COUNT.toString();
 
-  // Förladdning av alla bilder med progress-bar
   const images = [];
   for (let i = 1; i <= PAGE_COUNT; i++) {
     const src = FILE_PATTERN(i);
@@ -306,7 +295,7 @@
       img.onload = () => resolve();
       img.onerror = () => {
         console.error("Kunde inte ladda bild:", src);
-        resolve(); // fortsätt ändå
+        resolve();
       };
     });
 
@@ -345,21 +334,13 @@
   const totalPages = PAGE_COUNT;
 
   function updateBinderRings(currentIndex) {
-    // 0 = framsida, totalPages - 1 = baksida
-    if (currentIndex === 0 || currentIndex === totalPages - 1) {
-      binderEl.classList.add("no-rings");
-    } else {
-      binderEl.classList.remove("no-rings");
-    }
+    // i debug-läget gör vi faktiskt ingenting här,
+    // eftersom vi aldrig döljer ringarna
   }
-
-  // första läget efter att albumet laddats
-  updateBinderRings(pageFlip.getCurrentPageIndex());
 
   loader.style.display = "none";
   pageEl.textContent = (pageFlip.getCurrentPageIndex() + 1).toString();
 
-  // En flip-lyssnare som både uppdaterar sidnummer och ringar
   pageFlip.on("flip", (e) => {
     pageEl.textContent = (e.data + 1).toString();
     updateBinderRings(e.data);
@@ -369,11 +350,9 @@
     pageFlip.update();
   });
 
-  // Navigering
   document.getElementById("prev").addEventListener("click", () => pageFlip.flipPrev());
   document.getElementById("next").addEventListener("click", () => pageFlip.flipNext());
 
-  // Zoom
   let zoom = 1;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   function applyZoom() {
@@ -389,7 +368,6 @@
     applyZoom();
   });
 
-  // Helskärm
   document.getElementById("fullscreen").addEventListener("click", () => {
     const el = document.documentElement;
     if (!document.fullscreenElement &&
@@ -408,7 +386,6 @@
     }
   });
 
-  // Tangentbord
   window.addEventListener("keydown", (e) => {
     if (e.key === "ArrowLeft")  pageFlip.flipPrev();
     if (e.key === "ArrowRight") pageFlip.flipNext();
