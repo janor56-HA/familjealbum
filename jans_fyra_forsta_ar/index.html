@@ -60,10 +60,22 @@
     .viewer {
       position: relative;
       overflow: hidden;
-      display: flex;
-      justify-items:: center;
-      align-items: center;
-      padding: 8px;
+      display: grid;
+      place-items: center;
+      padding: 6px;
+    }
+
+    #book {
+      width: 100%;
+      height: 100%;
+      max-width: 1400px;
+      max-height: 90vh;
+      margin: 0 auto;
+      background: #111;
+      box-shadow: 0 10px 30px rgba(0,0,0,.6);
+      border-radius: 8px;
+      overflow: hidden;
+      transition: transform 0.15s ease-out;
     }
 
     .controls {
@@ -132,118 +144,11 @@
         flex: 1 1 auto;
         justify-content: center;
       }
+      #book {
+        max-width: 100%;
+        max-height: calc(100vh - 150px);
+      }
     }
-
-    /* === PÄRM + RINGMEKANIK === */
-
-    /* Yttre pärm runt albumet */
-   .binder {
-     position: relative;
-     padding: 18px 60px;                 /* avstånd runt albumet */
-     border-radius: 18px;
-     background: radial-gradient(circle at top, #444 0, #262626 40%, #111 100%);
-     box-shadow: 0 18px 40px rgba(0,0,0,0.65);
-     max-width: 1500px;
-     display: inline-block;              /* följ bokens storlek */
-   }
-
-    /* Själva PageFlip-ytan */
-    .binder #book {
-      position: relative;
-      z-index: 1;                         /* ringar och stång kan ligga över */
-      width: 100%;
-      height: 100%;
-      max-width: 1300px;
-      max-height: 90vh;
-      border-radius: 10px;
-      overflow: hidden;
-      background: #111;
-      box-shadow: 0 10px 30px rgba(0,0,0,.6);
-      transition: transform 0.15s ease-out;
-    }
-/* Gör alla PageFlip-element transparenta om de sätter egen bakgrund */
-#book,
-#book * {
-  background-color: transparent !important;
-}
-
-    /* Metallstången i mitten */
-    .binder::before {
-      content: "";
-      position: absolute;
-      top: 14%;             /* höjd på hållaren – ändra efter smak */
-      bottom: 14%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 24px;
-      border-radius: 14px;
-      background: linear-gradient(
-        180deg,
-        #777,
-        #cfcfcf 20%,
-        #f3f3f3 50%,
-        #cfcfcf 80%,
-        #666 100%
-      );
-      box-shadow:
-        0 0 8px rgba(0,0,0,0.5),
-        inset 0 0 4px rgba(0,0,0,0.6);
-      z-index: 2;
-      pointer-events: none;
-      transition: opacity 0.25s ease;
-    }
-
-    /* Container för ringhålen */
-    .rings {
-      position: absolute;
-      top: 16%;                   /* justera om du vill kortare/högre mekanik */
-      bottom: 16%;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 4;                 /* ovanpå stången */
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      pointer-events: none;
-      transition: opacity 0.25s ease;
-    }
-
-    /* Enskilt ringhål – ser ut som stansat hål i metall */
-    /* Enskild ring – stående metallring */
-    .ring {
-      width: 40px;
-      height: 10px;
-      border-radius: 999px;
-      border: 2px solid #e0e0e0;
-      border-bottom-color: transparent;      /* öppning ner mot sidan */
-      background: linear-gradient(
-        90deg,
-        #fdfdfd 0%,
-        #cccccc 40%,
-        #fdfdfd 70%,
-        #aaaaaa 100%
-      );
-      box-shadow:
-        0 0 3px rgba(0,0,0,0.7),
-        inset 0 0 2px rgba(0,0,0,0.8);
-    }
-
-    /* Dölj mekanik på framsida/baksida */
-    .binder.no-rings::before,
-    .binder.no-rings .rings {
-      opacity: 0;
-    }
-    /* Under aktiv bläddring – släck mekaniken helt */
-    .binder.hide-mech::before,
-    .binder.hide-mech .rings {
-      opacity: 0;
-    }
-    /* Under aktiv bläddring – släck mekaniken helt */
-    .binder.hide-mech::before,
-    .binder.hide-mech .rings {
-      opacity: 0;
-    }
-
   </style>
 </head>
 <body>
@@ -256,18 +161,7 @@
   </header>
 
   <div class="viewer">
-    <div class="binder">
-      <div id="book"></div>
-
-      <!-- Ringarna i mitten -->
-      <div class="rings">
-        <div class="ring"></div>
-        <div class="ring"></div>
-        <div class="ring"></div>
-        <div class="ring"></div>
-      </div>
-    </div>
-
+    <div id="book"></div>
     <div id="loader">
       <div style="display:grid; gap:10px; place-items:center;">
         <div>Läser in albumet…</div>
@@ -295,13 +189,17 @@
   </footer>
 </div>
 
+<!-- Endast PageFlip behövs nu -->
 <script src="../libs/page-flip.browser.js"></script>
 
 <script>
 (async function () {
-  const PAGE_COUNT = 58;
-  const IMAGE_PATH = "images";
+  // === Anpassa dessa per album ===
+  const PAGE_COUNT = 58;          // antal sidor i albumet
+  const IMAGE_PATH = "images";    // mappen där JPG-filerna ligger
   const FILE_PATTERN = i => `${IMAGE_PATH}/page-${i}.jpg`;
+  // Om du döper till page-01.jpg osv kan du använda:
+  // const FILE_PATTERN = i => `${IMAGE_PATH}/page-${String(i).padStart(2,'0')}.jpg`;
 
   const loader = document.getElementById('loader');
   const prog   = document.getElementById('prog');
@@ -309,22 +207,21 @@
   const pageEl = document.getElementById('page');
   const pagesEl= document.getElementById('pages');
   const bookEl = document.getElementById('book');
-const binderEl = document.querySelector(".binder");   // du har redan den längre ned
-binderEl.style.visibility = "hidden";
 
   pagesEl.textContent = PAGE_COUNT.toString();
 
+  // Förladdning av alla bilder med progress-bar
   const images = [];
   for (let i = 1; i <= PAGE_COUNT; i++) {
     const src = FILE_PATTERN(i);
     const img = new Image();
     img.src = src;
 
-    await new Promise((resolve) => {
+    await new Promise((resolve, reject) => {
       img.onload = () => resolve();
       img.onerror = () => {
         console.error("Kunde inte ladda bild:", src);
-        resolve();
+        resolve(); // fortsätt ändå
       };
     });
 
@@ -351,7 +248,7 @@ binderEl.style.visibility = "hidden";
     drawShadow: true,
     flippingTime: 600,
     showCover: true,
-    usePortrait: false,
+    usePortrait: true,
     autoSize: true,
     startPage: 0,
     mobileScrollSupport: false
@@ -359,52 +256,27 @@ binderEl.style.visibility = "hidden";
 
   pageFlip.loadFromImages(images);
 
-const totalPages = PAGE_COUNT;
+  loader.style.display = "none";
+  pageEl.textContent = (pageFlip.getCurrentPageIndex() + 1).toString();
 
-function updateBinderRings(currentIndex) {
-  // 0 = framsida, totalPages - 1 = baksida
-  if (currentIndex === 0 || currentIndex === totalPages - 1) {
-    binderEl.classList.add("no-rings");
-  } else {
-    binderEl.classList.remove("no-rings");
-  }
-}
-
-// första läget
-updateBinderRings(pageFlip.getCurrentPageIndex());
-
-loader.style.display = "none";
-binderEl.style.visibility = "visible";  // visa pärmen först nu
-zoom = 1.3;
-applyZoom();
-pageEl.textContent = (pageFlip.getCurrentPageIndex() + 1).toString();
-
-// När flip-panimationen är klar: tänd upp mekaniken igen (om inte omslag)
-pageFlip.on("flip", (e) => {
-  binderEl.classList.remove("hide-mech");          // tänd mekaniken
-  pageEl.textContent = (e.data + 1).toString();
-  updateBinderRings(e.data);
-});
+  pageFlip.on("flip", (e) => {
+    pageEl.textContent = (e.data + 1).toString();
+  });
 
   window.addEventListener("resize", () => {
     pageFlip.update();
   });
 
-  document.getElementById("prev").addEventListener("click", () => {
-    binderEl.classList.add("hide-mech");
-    pageFlip.flipPrev();
-  });
+  // Navigering
+  document.getElementById("prev").addEventListener("click", () => pageFlip.flipPrev());
+  document.getElementById("next").addEventListener("click", () => pageFlip.flipNext());
 
-  document.getElementById("next").addEventListener("click", () => {
-    binderEl.classList.add("hide-mech");
-    pageFlip.flipNext();
-  });
-
+  // Zoom
   let zoom = 1;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   function applyZoom() {
-    binderEl.style.transformOrigin = "center center";
-    binderEl.style.transform = `scale(${zoom})`;
+    bookEl.style.transformOrigin = "center center";
+    bookEl.style.transform = `scale(${zoom})`;
   }
   document.getElementById("zoomIn").addEventListener("click", () => {
     zoom = clamp(zoom + 0.1, 0.5, 2.2);
@@ -415,6 +287,7 @@ pageFlip.on("flip", (e) => {
     applyZoom();
   });
 
+  // Helskärm
   document.getElementById("fullscreen").addEventListener("click", () => {
     const el = document.documentElement;
     if (!document.fullscreenElement &&
@@ -429,23 +302,17 @@ pageFlip.on("flip", (e) => {
       (document.exitFullscreen ||
        document.webkitExitFullscreen ||
        document.mozCancelFullScreen ||
-       document.msExitFullscreen).call(el);
+       document.msExitFullscreen).call(document);
     }
   });
 
+  // Tangentbord
   window.addEventListener("keydown", (e) => {
-  if (e.key === "ArrowLeft") {
-    binderEl.classList.add("hide-mech");
-    pageFlip.flipPrev();
-  }
-  if (e.key === "ArrowRight") {
-    binderEl.classList.add("hide-mech");
-    pageFlip.flipNext();
-  }
-  if (e.key === "+") { zoom = clamp(zoom + 0.1, 0.5, 2.2); applyZoom(); }
-  if (e.key === "-") { zoom = clamp(zoom - 0.1, 0.5, 2.2); applyZoom(); }
-});
-
+    if (e.key === "ArrowLeft")  pageFlip.flipPrev();
+    if (e.key === "ArrowRight") pageFlip.flipNext();
+    if (e.key === "+") { zoom = clamp(zoom + 0.1, 0.5, 2.2); applyZoom(); }
+    if (e.key === "-") { zoom = clamp(zoom - 0.1, 0.5, 2.2); applyZoom(); }
+  });
 })();
 </script>
 </body>
