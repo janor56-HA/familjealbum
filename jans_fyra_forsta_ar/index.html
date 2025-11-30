@@ -210,26 +210,34 @@
 
   pagesEl.textContent = PAGE_COUNT.toString();
 
-  // Förladdning av alla bilder med progress-bar
-  const images = [];
-  for (let i = 1; i <= PAGE_COUNT; i++) {
-    const src = FILE_PATTERN(i);
-    const img = new Image();
-    img.src = src;
+  // === NY PRELOAD: alla bilder laddas parallellt ===
+  let loaded = 0;
 
-    await new Promise((resolve, reject) => {
-      img.onload = () => resolve();
+  function preloadImage(src) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(src);
       img.onerror = () => {
         console.error("Kunde inte ladda bild:", src);
-        resolve(); // fortsätt ändå
+        resolve(src); // fortsätt ändå
       };
+      img.src = src;
+    }).then((src) => {
+      loaded++;
+      const percent = Math.round((loaded / PAGE_COUNT) * 100);
+      prog.value = percent;
+      status.textContent = percent + "%";
+      return src;
     });
-
-    images.push(src);
-    const percent = Math.round((i / PAGE_COUNT) * 100);
-    prog.value = percent;
-    status.textContent = percent + "%";
   }
+
+  const preloadPromises = [];
+  for (let i = 1; i <= PAGE_COUNT; i++) {
+    preloadPromises.push(preloadImage(FILE_PATTERN(i)));
+  }
+
+  // Vänta tills alla plockat hem sina data (men de laddas parallellt)
+  const images = await Promise.all(preloadPromises);
 
   if (!window.St || !St.PageFlip) {
     console.error("St.PageFlip saknas. Kontrollera ../libs/page-flip.browser.js.");
@@ -315,5 +323,6 @@
   });
 })();
 </script>
+
 </body>
 </html>
