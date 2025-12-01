@@ -103,9 +103,15 @@
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      grid-template-columns: minmax(0, 1fr); /* default: 1 kolumn */
       gap: 16px;
       margin-top: 16px;
+    }
+
+    @media (min-width: 900px) {
+    .grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr)); /* 2 kolumner på större skärmar */
+      }
     }
 
     .card {
@@ -222,6 +228,7 @@
       <button class="pill" data-filter="barn">👶 Barn & uppväxt</button>
       <button class="pill" data-filter="hogtid">🎉 Högtider</button>
       <button class="pill" data-filter="resa">✈️ Resor</button>
+      <button class="pill" data-filter="annat">📂 Övrigt</button>
     </div>
   </div>
 
@@ -238,23 +245,23 @@
     {
       id: "jans_fyra_forsta_ar",          // mappnamn
       title: "Jans fyra första år",
-      description: "De första åren samlade i ett bläddringsbart album.",
+      description: "De första åren.",
       year: "1956–1960",
       category: "barn",                    // barn / hogtid / resa / annat
       cover: "images/page-1.jpg"         // relativt album-mappen
     },
     {
-      id: "ringso_1989-1992",          // mappnamn
-      title: "Ringsö åren 1989 - 1992",
-      description: "De första åren samlade i ett bläddringsbart album.",
+      id: "gotland_1983",          // mappnamn
+      title: "Gotland 1983",
+      description: "Sommaren 1983 på Gotland under 3 veckor.",
       year: "1989-1992",
-      category: "annat",                    // barn / hogtid / resa / annat
+      category: "resa",                    // barn / hogtid / resa / annat
       cover: "images/page-1.jpg"         // relativt album-mappen
     },
     {
-      id: "gotland_1983",          // mappnamn
-      title: "Gotland 1983",
-      description: "Sommaren 1983 på Gotland under 3 veckor i ett bläddringsbart album.",
+      id: "ringso_1989-1992",          // mappnamn
+      title: "Ringsö åren 1989 - 1992",
+      description: "De första åren, mest röjning och byggnation.",
       year: "1989-1992",
       category: "annat",                    // barn / hogtid / resa / annat
       cover: "images/page-1.jpg"         // relativt album-mappen
