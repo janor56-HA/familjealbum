@@ -194,23 +194,29 @@
 
 <script>
 (async function () {
-  // jan, janne jano === Anpassa dessa per album ===
+  // === Anpassa dessa per album ===
   const PAGE_COUNT = 82;          // antal sidor i albumet
   const IMAGE_PATH = "images";    // mappen där JPG-filerna ligger
   const FILE_PATTERN = i => `${IMAGE_PATH}/page-${i}.jpg`;
-  // Om du döper till page-01.jpg osv kan du använda:
   // const FILE_PATTERN = i => `${IMAGE_PATH}/page-${String(i).padStart(2,'0')}.jpg`;
 
-  const loader = document.getElementById('loader');
-  const prog   = document.getElementById('prog');
-  const status = document.getElementById('status');
-  const pageEl = document.getElementById('page');
-  const pagesEl= document.getElementById('pages');
-  const bookEl = document.getElementById('book');
+  const loader  = document.getElementById('loader');
+  const prog    = document.getElementById('prog');
+  const status  = document.getElementById('status');
+  const pageEl  = document.getElementById('page');
+  const pagesEl = document.getElementById('pages');
+  const bookEl  = document.getElementById('book');
 
   pagesEl.textContent = PAGE_COUNT.toString();
 
-  // === NY PRELOAD: alla bilder laddas parallellt ===
+  // === NY STRATEGI: förladda bara första N sidor ===
+  const FIRST_PRELOAD = 6;    // prova 4–10, 8 är en bra start
+
+  // Alla bild-URL:er (används av PageFlip)
+  const images = Array.from({ length: PAGE_COUNT }, (_, idx) =>
+    FILE_PATTERN(idx + 1)
+  );
+
   let loaded = 0;
 
   function preloadImage(src) {
@@ -224,20 +230,26 @@
       img.src = src;
     }).then((src) => {
       loaded++;
-      const percent = Math.round((loaded / PAGE_COUNT) * 100);
+      // Progress avser bara första FIRST_PRELOAD sidorna
+      const percent = Math.round((loaded / FIRST_PRELOAD) * 100);
       prog.value = percent;
       status.textContent = percent + "%";
       return src;
     });
   }
 
+  // Förladda bara första FIRST_PRELOAD sidorna
   const preloadPromises = [];
-  for (let i = 1; i <= PAGE_COUNT; i++) {
-    preloadPromises.push(preloadImage(FILE_PATTERN(i)));
+  for (let i = 0; i < Math.min(FIRST_PRELOAD, PAGE_COUNT); i++) {
+    preloadPromises.push(preloadImage(images[i]));
   }
 
-  // Vänta tills alla plockat hem sina data (men de laddas parallellt)
-  const images = await Promise.all(preloadPromises);
+  // Vänta tills första sidorna är i cache
+  await Promise.all(preloadPromises);
+
+  // Resten av sidorna laddas när PageFlip/bläddring behöver dem
+  prog.value = 100;
+  status.textContent = "100%";
 
   if (!window.St || !St.PageFlip) {
     console.error("St.PageFlip saknas. Kontrollera ../libs/page-flip.browser.js.");
@@ -262,6 +274,7 @@
     mobileScrollSupport: false
   });
 
+  // Skicka in alla URL:er – men bara de första är garanterat cachade
   pageFlip.loadFromImages(images);
 
   loader.style.display = "none";
