@@ -9,21 +9,18 @@
     * { box-sizing: border-box; }
 
     html, body {
+      height: 100%;
       margin: 0;
-      padding: 0;
-      height: 100vh;          /* exakt fönsterhöjd */
-      overflow: hidden;       /* ingen scroll utanför albumet */
       background: #050505;
       color: #f0f0f0;
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
                    Roboto, Helvetica, Arial, sans-serif;
-      overscroll-behavior: contain;
     }
 
     .wrap {
       height: 100%;
-      display: flex;
-      flex-direction: column;  /* header överst, viewer i mitten, footer nederst */
+      display: grid;
+      grid-template-rows: auto 1fr auto;
       background: radial-gradient(circle at top, #222 0, #050505 55%);
     }
 
@@ -61,38 +58,31 @@
 
     .viewer {
       position: relative;
-      overflow: hidden;        /* inget eget scroll här */
+      overflow: hidden;
       display: grid;
       place-items: center;
       padding: 6px;
-      -webkit-user-select: none;
-      user-select: none;
-      touch-action: none;
-
-      flex: 1 1 auto;          /* fyll utrymmet mellan header och footer */
-      min-height: 0;           /* viktigt i flexlayout för att få krympa */
     }
 
     #book {
       width: 100%;
-      height: 100%;         /* fyll viewer-ytan */
+      height: 100%;
       max-width: 1400px;
+      max-height: 90vh;
       margin: 0 auto;
       background: #111;
       box-shadow: 0 10px 30px rgba(0,0,0,.6);
       border-radius: 8px;
       overflow: hidden;
       transition: transform 0.15s ease-out;
-      -webkit-user-select: none;
-      user-select: none;
-      touch-action: none;
     }
 
+    /* Lager ovanpå boken för panorering när zoom > 1 */
     #panLayer {
       position: absolute;
       inset: 0;
-      pointer-events: none;  /* slås på i JS när zoom > 1 */
-      touch-action: none;    /* hindra browser-scroll / långtryck */
+      pointer-events: none;   /* slås på i JS när zoom > 1 */
+      touch-action: none;     /* hindra browser-scroll/långtryck när aktiv */
       -webkit-user-select: none;
       user-select: none;
     }
@@ -163,10 +153,9 @@
         flex: 1 1 auto;
         justify-content: center;
       }
-
       #book {
         max-width: 100%;
-        height: 100%;    /* fortfarande fylla viewer, ingen max-height */
+        max-height: calc(100vh - 150px);
       }
     }
   </style>
@@ -433,10 +422,10 @@
     endPan(e);
   });
 
-  // --- Resize / rotation: uppdatera både PageFlip och vår transform ---
+  // --- Resize / rotation ---
   window.addEventListener("resize", () => {
     pageFlip.update();
-    // Vid rotation/resize: återställ vy så hela sidan syns
+    // säkerställ att vi inte fastnar i konstiga pan-värden efter rotation
     zoom = 1;
     panX = 0;
     panY = 0;
@@ -450,7 +439,7 @@
     const requestFullScreen =
       el.requestFullscreen ||
       el.webkitRequestFullscreen ||
-      el.webkitRequestFullScreen || // vissa WebKit-varianter
+      el.webkitRequestFullScreen ||
       el.msRequestFullscreen;
 
     const exitFullScreen =
@@ -459,7 +448,6 @@
       document.webkitCancelFullScreen ||
       document.msExitFullscreen;
 
-    // Om API inte stöds: tala om det och gör inget mer
     if (!requestFullScreen || !exitFullScreen) {
       alert("Helskärm stöds tyvärr inte i den här webbläsaren på denna enhet.");
       return;
@@ -484,6 +472,10 @@
     if (e.key === "+") { zoom = clamp(zoom + 0.2, 1, 2.5); updateTransform(); }
     if (e.key === "-") { zoom = clamp(zoom - 0.2, 1, 2.5); updateTransform(); }
   });
+
+  // Navigering-knappar
+  document.getElementById("prev").addEventListener("click", () => pageFlip.flipPrev());
+  document.getElementById("next").addEventListener("click", () => pageFlip.flipNext());
 
 })();
 </script>
