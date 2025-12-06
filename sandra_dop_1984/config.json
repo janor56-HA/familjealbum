@@ -1,0 +1,6 @@
+{
+  "title": "Sandras dop 1984",
+  "pageCount": 12,
+  "imagePath": "images",
+  "filePattern": "page-{n}.jpg"    // eller "page-{nn}.jpg" om du kör 01, 02, 03
+}
