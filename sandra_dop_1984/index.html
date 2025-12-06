@@ -186,6 +186,7 @@
       <button id="next">Nästa →</button>
       <button id="zoomOut">– Zoom</button>
       <button id="zoomIn">+ Zoom</button>
+      <button id="zoomReset">↺ Reset zoom</button>
       <button id="fullscreen">⛶ Helskärm</button>
       <button onclick="location.href='../index.html'">🏠 Tillbaka</button>
     </div>
@@ -287,29 +288,109 @@
   document.getElementById("prev").addEventListener("click", () => pageFlip.flipPrev());
   document.getElementById("next").addEventListener("click", () => pageFlip.flipNext());
 
-  // Zoom
+  // Zoom + panorering
   let zoom = 1;
+  let panX = 0;
+  let panY = 0;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-  function applyZoom() {
-    bookEl.style.transformOrigin = "center center";
-    bookEl.style.transform = `scale(${zoom})`;
-  }
-  document.getElementById("zoomIn").addEventListener("click", () => { zoom = clamp(zoom + 0.1, 0.5, 2.2); applyZoom(); });
-  document.getElementById("zoomOut").addEventListener("click", () => { zoom = clamp(zoom - 0.1, 0.5, 2.2); applyZoom(); });
 
-  // Helskärm
-  document.getElementById("fullscreen").addEventListener("click", () => {
-    const el = document.documentElement;
-    if (!document.fullscreenElement) (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
-    else (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+  function updateTransform() {
+    // Begränsa panorering så man inte "tappar bort" boken helt
+    const w = bookEl.clientWidth;
+    const h = bookEl.clientHeight;
+
+    const maxOffsetX = (w * (zoom - 1)) / 2;
+    const maxOffsetY = (h * (zoom - 1)) / 2;
+
+    if (zoom <= 1) {
+      panX = 0;
+      panY = 0;
+    } else {
+      panX = clamp(panX, -maxOffsetX, maxOffsetX);
+      panY = clamp(panY, -maxOffsetY, maxOffsetY);
+    }
+
+    bookEl.style.transformOrigin = "center center";
+    bookEl.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+  }
+
+  document.getElementById("zoomIn").addEventListener("click", () => {
+    zoom = clamp(zoom + 0.2, 1, 2.5);
+    updateTransform();
+  });
+
+  document.getElementById("zoomOut").addEventListener("click", () => {
+    zoom = clamp(zoom - 0.2, 1, 2.5);
+    updateTransform();
+  });
+
+  // Panorera genom att dra när man är inzoomad
+  let isPanning = false;
+  let startX = 0;
+  let startY = 0;
+  let startPanX = 0;
+  let startPanY = 0;
+  let activePointerId = null;
+
+  bookEl.addEventListener("pointerdown", (e) => {
+    if (zoom <= 1) return; // ingen panorering om inte inzoomad
+
+    isPanning = true;
+    activePointerId = e.pointerId;
+    startX = e.clientX;
+    startY = e.clientY;
+    startPanX = panX;
+    startPanY = panY;
+
+    // hindra PageFlip från att tolka detta som bläddring
+    e.preventDefault();
+    e.stopPropagation();
+
+    bookEl.setPointerCapture(activePointerId);
+  });
+
+  bookEl.addEventListener("pointermove", (e) => {
+    if (!isPanning || e.pointerId !== activePointerId) return;
+
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+
+    panX = startPanX + dx;
+    panY = startPanY + dy;
+
+    updateTransform();
+  });
+
+  function endPan(e) {
+    if (!isPanning || (activePointerId !== null && e.pointerId !== activePointerId)) return;
+    isPanning = false;
+    if (activePointerId !== null) {
+      try { bookEl.releasePointerCapture(activePointerId); } catch (_) {}
+    }
+    activePointerId = null;
+  }
+
+  bookEl.addEventListener("pointerup", endPan);
+  bookEl.addEventListener("pointercancel", endPan);
+  bookEl.addEventListener("pointerleave", (e) => {
+    if (!isPanning) return;
+    endPan(e);
   });
 
   // Tangentbord
   window.addEventListener("keydown", (e) => {
     if (e.key === "ArrowLeft")  pageFlip.flipPrev();
     if (e.key === "ArrowRight") pageFlip.flipNext();
-    if (e.key === "+") { zoom = clamp(zoom + 0.1, 0.5, 2.2); applyZoom(); }
-    if (e.key === "-") { zoom = clamp(zoom - 0.1, 0.5, 2.2); applyZoom(); }
+    if (e.key === "+") { zoom = clamp(zoom + 0.2, 1, 2.5); updateTransform(); }
+    if (e.key === "-") { zoom = clamp(zoom - 0.2, 1, 2.5); updateTransform(); }
+  });
+
+    // Reset Zoom
+  document.getElementById("zoomReset").addEventListener("click", () => {
+    zoom = 1;
+    panX = 0;
+    panY = 0;
+    updateTransform();
   });
 
 })();
