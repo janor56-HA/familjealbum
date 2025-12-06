@@ -18,7 +18,7 @@
     }
 
     .wrap {
-      height: 100%;
+      min-height: 100vh;
       display: grid;
       grid-template-rows: auto 1fr auto;
       background: radial-gradient(circle at top, #222 0, #050505 55%);
@@ -56,20 +56,20 @@
       text-align: right;
     }
 
+    /* Viewer får SCROLL om albumet inte får plats (särskilt på mobil/landskap) */
     .viewer {
       position: relative;
-      overflow: hidden;           /* ingen scroll här – vi anpassar höjden i JS */
+      overflow: auto;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
       padding: 6px;
     }
 
     #book {
       width: 100%;
-      height: 100%;               /* fyll viewer-höjden */
       max-width: 1400px;
-      /* max-height sätts dynamiskt i JS utifrån fönsterhöjd - header - footer */
+      height: auto;         /* låt PageFlip bestämma höjd utifrån proportionerna */
       margin: 0 auto;
       background: #111;
       box-shadow: 0 10px 30px rgba(0,0,0,.6);
@@ -256,29 +256,8 @@
   const pagesEl  = document.getElementById('pages');
   const bookEl   = document.getElementById('book');
   const panLayer = document.getElementById('panLayer');
-  const headerEl = document.querySelector('header');
-  const footerEl = document.querySelector('footer');
 
   pagesEl.textContent = PAGE_COUNT.toString();
-
-  // === Dynamisk max-höjd för boken så att den alltid ryms mellan header & footer (zoom 1) ===
-  function resizeBook() {
-    const headerH = headerEl.offsetHeight || 0;
-    const footerH = footerEl.offsetHeight || 0;
-    const windowH = window.innerHeight || document.documentElement.clientHeight;
-    // Lite marginal (t.ex. padding i viewer)
-    const margin = 12;
-    const available = windowH - headerH - footerH - margin;
-    if (available > 0) {
-      bookEl.style.maxHeight = available + "px";
-    } else {
-      // Fallback om skärmen är extremt liten
-      bookEl.style.maxHeight = "200px";
-    }
-  }
-
-  // Kör en första gång direkt (innan PageFlip) så container har rimlig storlek
-  resizeBook();
 
   const FIRST_PRELOAD = 8;
   const images = Array.from({ length: PAGE_COUNT }, (_, idx) =>
@@ -318,10 +297,11 @@
     return;
   }
 
+  // Viktig ändring: size: "fixed" för att behålla proportionerna (ingen stretch i Y-led)
   const pageFlip = new St.PageFlip(bookEl, {
     width: 800,
     height: 1100,
-    size: "stretch",
+    size: "fixed",      // <=== ingen stretch, behåll 800x1100-ration
     minWidth: 320,
     minHeight: 400,
     maxWidth: 2000,
@@ -360,11 +340,11 @@
       zoom = 1;
       panX = 0;
       panY = 0;
-      panLayer.style.pointerEvents = "none";
+      panLayer.style.pointerEvents = "none";   // ingen pan -> vanlig scroll i .viewer
     } else {
       panX = clamp(panX, -maxOffsetX, maxOffsetX);
       panY = clamp(panY, -maxOffsetY, maxOffsetY);
-      panLayer.style.pointerEvents = "auto";
+      panLayer.style.pointerEvents = "auto";   // panLayer fångar drag för panorering
     }
 
     bookEl.style.transformOrigin = "center center";
@@ -440,9 +420,8 @@
     endPan(e);
   });
 
-  // Resize / rotation: uppdatera PageFlip + max-höjd och nollställ zoom/pan
+  // Resize / rotation: uppdatera PageFlip och nollställ zoom/pan
   window.addEventListener("resize", () => {
-    resizeBook();
     pageFlip.update();
     zoom = 1;
     panX = 0;
