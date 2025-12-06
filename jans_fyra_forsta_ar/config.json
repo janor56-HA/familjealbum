@@ -2,5 +2,5 @@
   "title": "Jans fyra första år",
   "pageCount": 58,
   "imagePath": "images",
-  "filePattern": "page-{n}.jpg"    // eller "page-{nn}.jpg" om du kör 01, 02, 03
+  "filePattern": "page-{n}.jpg"
 }
