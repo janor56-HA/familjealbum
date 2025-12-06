@@ -11,8 +11,7 @@
     html, body {
       margin: 0;
       padding: 0;
-      height: 100%;
-      overflow: hidden;          /* ingen global scroll, viewer sköter det */
+      min-height: 100vh;
       background: #050505;
       color: #f0f0f0;
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
@@ -20,9 +19,9 @@
     }
 
     .wrap {
-      height: 100%;
-      display: flex;
-      flex-direction: column;    /* header, viewer, footer i kolumn */
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
       background: radial-gradient(circle at top, #222 0, #050505 55%);
     }
 
@@ -35,7 +34,6 @@
       justify-content: space-between;
       gap: 8px;
       border-bottom: 1px solid #222;
-      flex: 0 0 auto;
     }
 
     footer {
@@ -59,21 +57,22 @@
       text-align: right;
     }
 
+    /* Viewer får scroll om albumet är större (mobil landskap t.ex.) */
     .viewer {
       position: relative;
-      flex: 1 1 auto;          /* tar allt utrymme mellan header och footer */
-      min-height: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      overflow: auto;
+      display: grid;
+      place-items: center;
       padding: 6px;
-      overflow: auto;          /* VIKTIGT: tillåter scroll (mobil landskap etc.) */
       -webkit-user-select: none;
       user-select: none;
-      /* touch-action lämnas default → scroll funkar när panLayer är av */
     }
 
     #book {
+      width: 100%;
+      max-width: 1400px;
+      max-height: 90vh;          /* styr maxhöjd i förhållande till fönstret */
+      margin: 0 auto;
       background: #111;
       box-shadow: 0 10px 30px rgba(0,0,0,.6);
       border-radius: 8px;
@@ -81,15 +80,14 @@
       transition: transform 0.15s ease-out;
       -webkit-user-select: none;
       user-select: none;
-      touch-action: none;
-      /* width/height sätts i JS (layoutBook) för rätt ratio */
+      touch-action: none;        /* vi styr drag i zoom-läge själva */
     }
 
     /* Lager ovanpå boken för panorering när zoom > 1 */
     #panLayer {
       position: absolute;
       inset: 0;
-      pointer-events: none;   /* slås på i JS när zoom > 1 */
+      pointer-events: none;      /* slås på i JS när zoom > 1 */
       touch-action: none;
       -webkit-user-select: none;
       user-select: none;
@@ -161,6 +159,10 @@
         flex: 1 1 auto;
         justify-content: center;
       }
+      #book {
+        max-width: 100%;
+        max-height: calc(100vh - 150px);  /* lite extra på små skärmar */
+      }
     }
   </style>
 </head>
@@ -211,11 +213,7 @@
 (async function () {
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-  // === Grundmått för boken ===
-  const BASE_WIDTH  = 800;
-  const BASE_HEIGHT = 1100;
-  const BASE_ASPECT = BASE_WIDTH / BASE_HEIGHT;
-
+  // 1. Hämta album-id
   const params = new URLSearchParams(window.location.search);
   const albumId = params.get("album");
 
@@ -224,7 +222,7 @@
     throw new Error("No album id");
   }
 
-  // Läs config.json
+  // 2. Läs config.json
   const configUrl = `${albumId}/config.json`;
   let config;
   try {
@@ -264,33 +262,8 @@
   const pagesEl  = document.getElementById('pages');
   const bookEl   = document.getElementById('book');
   const panLayer = document.getElementById('panLayer');
-  const viewerEl = document.querySelector('.viewer');
 
   pagesEl.textContent = PAGE_COUNT.toString();
-
-  // Layout: skala boken så den får plats i viewer utan att beskäras
-  function layoutBook() {
-    const vw = viewerEl.clientWidth;
-    const vh = viewerEl.clientHeight;
-    if (!vw || !vh) return;
-
-    const viewerAspect = vw / vh;
-    let w, h;
-    if (viewerAspect > BASE_ASPECT) {
-      // Viewer är "bred" -> höjd begränsar
-      h = vh;
-      w = h * BASE_ASPECT;
-    } else {
-      // Viewer är "smal" -> bredd begränsar
-      w = vw;
-      h = w / BASE_ASPECT;
-    }
-
-    bookEl.style.width  = w + "px";
-    bookEl.style.height = h + "px";
-  }
-
-  layoutBook();
 
   const FIRST_PRELOAD = 8;
   const images = Array.from({ length: PAGE_COUNT }, (_, idx) =>
@@ -330,10 +303,14 @@
     return;
   }
 
+  // 3. Starta PageFlip – låt det själv hantera proportionerna inne i #book
+  const BASE_WIDTH  = 800;
+  const BASE_HEIGHT = 1100;
+
   const pageFlip = new St.PageFlip(bookEl, {
     width: BASE_WIDTH,
     height: BASE_HEIGHT,
-    size: "stretch",
+    size: "stretch",       // stretch inne i #book, som begränsas av CSS
     minWidth: 320,
     minHeight: 400,
     maxWidth: 2000,
@@ -356,7 +333,7 @@
     pageEl.textContent = (e.data + 1).toString();
   });
 
-  // Zoom + panorering
+  // === Zoom + panorering ===
   let zoom = 1;
   let panX = 0;
   let panY = 0;
@@ -365,7 +342,7 @@
     zoom = 1;
     panX = 0;
     panY = 0;
-    panLayer.style.pointerEvents = "none";
+    panLayer.style.pointerEvents = "none";  // ingen pan → vanlig scroll i .viewer
     bookEl.style.transformOrigin = "center center";
     bookEl.style.transform = "translate(0px, 0px) scale(1)";
   }
@@ -374,17 +351,17 @@
     const w = bookEl.clientWidth;
     const h = bookEl.clientHeight;
 
-    const maxOffsetX = (w * (zoom - 1)) / 2;
-    const maxOffsetY = (h * (zoom - 1)) / 2;
-
     if (zoom <= 1) {
       resetView();
       return;
     }
 
+    const maxOffsetX = (w * (zoom - 1)) / 2;
+    const maxOffsetY = (h * (zoom - 1)) / 2;
+
     panX = clamp(panX, -maxOffsetX, maxOffsetX);
     panY = clamp(panY, -maxOffsetY, maxOffsetY);
-    panLayer.style.pointerEvents = "auto";
+    panLayer.style.pointerEvents = "auto";  // svep går till panorering
 
     bookEl.style.transformOrigin = "center center";
     bookEl.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
@@ -456,18 +433,13 @@
     endPan(e);
   });
 
-  // Resize / rotation + fullscreen-change: räkna om layout, uppdatera PageFlip, nollställ zoom/pan
-  function handleResizeLike() {
-    layoutBook();
+  // === Viktig ändring: enkel resize – bara låt PageFlip uppdatera sig, vi rör inte zoom ===
+  window.addEventListener("resize", () => {
     pageFlip.update();
-    resetView();
-  }
+    // vi kallar INTE resetView här → ingen mystisk "krympning" vid fönsterändring
+  });
 
-  window.addEventListener("resize", handleResizeLike);
-  document.addEventListener("fullscreenchange", handleResizeLike);
-  document.addEventListener("webkitfullscreenchange", handleResizeLike);
-
-  // Helskärm
+  // Helskärm (låt webbläsaren sköta zoom, vi ändrar inget extra)
   document.getElementById("fullscreen").addEventListener("click", () => {
     const el = document.documentElement;
 
