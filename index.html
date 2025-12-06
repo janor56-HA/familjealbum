@@ -329,7 +329,7 @@
       .forEach(album => {
         const link = document.createElement('a');
         link.className = 'card';
-        link.href = `${album.id}/index.html`;
+        link.href = `viewer.html?album=${album.id}`;
 
         const coverStyle = album.cover
           ? `style="background-image:url('${album.id}/${album.cover}');"`
