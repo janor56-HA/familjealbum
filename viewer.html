@@ -18,7 +18,7 @@
     }
 
     .wrap {
-      height: 100%;
+      min-height: 100vh;
       display: grid;
       grid-template-rows: auto 1fr auto;
       background: radial-gradient(circle at top, #222 0, #050505 55%);
@@ -56,11 +56,12 @@
       text-align: right;
     }
 
+    /* Viewer kan scrolla om albumet blir högre än utrymmet (speciellt i landskap) */
     .viewer {
       position: relative;
-      overflow: hidden;
+      overflow: auto;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
       padding: 6px;
     }
@@ -68,7 +69,7 @@
     #book {
       width: 100%;
       max-width: 1400px;
-      max-height: 100%;       /* fyll viewer-höjden men inte mer */
+      height: auto;            /* låt PageFlip bestämma höjd */
       margin: 0 auto;
       background: #111;
       box-shadow: 0 10px 30px rgba(0,0,0,.6);
@@ -155,7 +156,6 @@
       }
       #book {
         max-width: 100%;
-        max-height: 100%;      /* samma princip på mobil */
       }
     }
   </style>
@@ -205,10 +205,9 @@
 
 <script>
 (async function () {
-  // --- Hjälpfunktion för clamp ---
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-  // 1. Hämta album-id från querystring
+  // 1. Hämta album-id
   const params = new URLSearchParams(window.location.search);
   const albumId = params.get("album");
 
@@ -217,7 +216,7 @@
     throw new Error("No album id");
   }
 
-  // 2. Läs config.json i album-mappen
+  // 2. Läs config.json
   const configUrl = `${albumId}/config.json`;
   let config;
   try {
@@ -235,7 +234,6 @@
   const IMAGE_PATH = config.imagePath || "images";
   const pattern    = config.filePattern || "page-{n}.jpg";
 
-  // Skapa filnamnsfunktion utifrån pattern
   function buildFileName(i) {
     const n   = String(i);
     const nn  = String(i).padStart(2, "0");
@@ -248,7 +246,6 @@
 
   const FILE_PATTERN = i => `${albumId}/${IMAGE_PATH}/${buildFileName(i)}`;
 
-  // 3. Sätt titel i UI
   document.getElementById("albumTitle").textContent = title;
   document.title = `${title} – bläddringsalbum`;
 
@@ -326,7 +323,7 @@
     pageEl.textContent = (e.data + 1).toString();
   });
 
-  // --- Zoom + panorering med panLayer ---
+  // --- Zoom + panorering ---
   let zoom = 1;
   let panX = 0;
   let panY = 0;
@@ -342,11 +339,11 @@
       zoom = 1;
       panX = 0;
       panY = 0;
-      panLayer.style.pointerEvents = "none";  // svep går till PageFlip
+      panLayer.style.pointerEvents = "none";
     } else {
       panX = clamp(panX, -maxOffsetX, maxOffsetX);
       panY = clamp(panY, -maxOffsetY, maxOffsetY);
-      panLayer.style.pointerEvents = "auto";  // svep går till panorering
+      panLayer.style.pointerEvents = "auto";
     }
 
     bookEl.style.transformOrigin = "center center";
@@ -370,7 +367,7 @@
     updateTransform();
   });
 
-  // Panorera genom att dra på panLayer när man är inzoomad
+  // Panorera genom att dra på panLayer när zoom > 1
   let isPanning = false;
   let startX = 0;
   let startY = 0;
@@ -379,7 +376,7 @@
   let activePointerId = null;
 
   panLayer.addEventListener("pointerdown", (e) => {
-    if (zoom <= 1) return; // ingen pan om inte inzoomad
+    if (zoom <= 1) return;
 
     isPanning = true;
     activePointerId = e.pointerId;
@@ -422,7 +419,7 @@
     endPan(e);
   });
 
-  // --- Resize / rotation: nollställ zoom/pan så hel sida syns igen ---
+  // Resize / rotation: uppdatera layout & nollställ zoom/pan
   window.addEventListener("resize", () => {
     pageFlip.update();
     zoom = 1;
@@ -472,10 +469,9 @@
     if (e.key === "-") { zoom = clamp(zoom - 0.2, 1, 2.5); updateTransform(); }
   });
 
-  // Navigering-knappar
+  // Navigeringsknappar
   document.getElementById("prev").addEventListener("click", () => pageFlip.flipPrev());
   document.getElementById("next").addEventListener("click", () => pageFlip.flipNext());
-
 })();
 </script>
 </body>
