@@ -172,7 +172,7 @@
 
   <div id="loader">
     <div style="display:grid; gap:10px; place-items:center;">
-      <div>Läser in albumet…</div>
+      <div id="loaderText">Läser in albumet…</div>
       <progress id="prog" max="100" value="0"></progress>
       <div id="status">0%</div>
       <div style="font-size:0.8rem; opacity:0.8;">
@@ -328,7 +328,6 @@
   let zoom = 1;
   let panX = 0;
   let panY = 0;
-  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
   function updateTransform() {
     const w = bookEl.clientWidth;
