@@ -71,7 +71,7 @@
     #book {
       width: 100%;
       max-width: 1400px;
-      max-height: 90vh;          /* styr maxhöjd i förhållande till fönstret */
+      max-height: 82vh;          /* lite lägre än tidigare 90vh → mer plats för knappar */
       margin: 0 auto;
       background: #111;
       box-shadow: 0 10px 30px rgba(0,0,0,.6);
@@ -159,9 +159,14 @@
         flex: 1 1 auto;
         justify-content: center;
       }
+
+      .viewer {
+        padding: 2px;          /* mindre padding → mer plats till album + knappar */
+      }
+
       #book {
         max-width: 100%;
-        max-height: calc(100vh - 150px);  /* lite extra på små skärmar */
+        max-height: 70vh;      /* mindre än tidigare → knappar får plats utan lika mkt scroll */
       }
     }
   </style>
@@ -433,10 +438,9 @@
     endPan(e);
   });
 
-  // === Viktig ändring: enkel resize – bara låt PageFlip uppdatera sig, vi rör inte zoom ===
+  // Resize: låt bara PageFlip uppdatera sig
   window.addEventListener("resize", () => {
     pageFlip.update();
-    // vi kallar INTE resetView här → ingen mystisk "krympning" vid fönsterändring
   });
 
   // Helskärm (låt webbläsaren sköta zoom, vi ändrar inget extra)
