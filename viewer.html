@@ -431,17 +431,44 @@
   // --- Resize / rotation: uppdatera både PageFlip och vår transform ---
   window.addEventListener("resize", () => {
     pageFlip.update();
-    updateTransform();  // klampar panX/panY med nya mått
+    // Vid rotation/resize: återställ vy så hela sidan syns
+    zoom = 1;
+    panX = 0;
+    panY = 0;
+    updateTransform();
   });
 
   // Helskärm
   document.getElementById("fullscreen").addEventListener("click", () => {
     const el = document.documentElement;
-    if (!document.fullscreenElement &&
-        !document.webkitFullscreenElement) {
-      (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+
+    const requestFullScreen =
+      el.requestFullscreen ||
+      el.webkitRequestFullscreen ||
+      el.webkitRequestFullScreen || // vissa WebKit-varianter
+      el.msRequestFullscreen;
+
+    const exitFullScreen =
+      document.exitFullscreen ||
+      document.webkitExitFullscreen ||
+      document.webkitCancelFullScreen ||
+      document.msExitFullscreen;
+
+    // Om API inte stöds: tala om det och gör inget mer
+    if (!requestFullScreen || !exitFullScreen) {
+      alert("Helskärm stöds tyvärr inte i den här webbläsaren på denna enhet.");
+      return;
+    }
+
+    const isFull =
+      document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.msFullscreenElement;
+
+    if (!isFull) {
+      requestFullScreen.call(el);
     } else {
-      (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      exitFullScreen.call(document);
     }
   });
 
