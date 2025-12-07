@@ -17,13 +17,13 @@
       color: #f0f0f0;
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
                    Roboto, Helvetica, Arial, sans-serif;
-      overflow: hidden; /* Vi sköter scroll inom viewer */
+      overflow: hidden; /* ingen global scroll – vi håller allt i viewporten */
     }
 
     .wrap {
       height: 100%;
       display: grid;
-      grid-template-rows: auto 1fr auto;
+      grid-template-rows: auto 1fr auto; /* header – viewer – footer */
       background: radial-gradient(circle at top, #222 0, #050505 55%);
     }
 
@@ -37,52 +37,83 @@
       justify-content: space-between;
       gap: 8px;
     }
-    footer { border-bottom: none; border-top: 1px solid #222; }
+    footer {
+      border-bottom: none;
+      border-top: 1px solid #222;
+    }
+
+    header > div:first-child {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.95rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
     header .hint {
       font-size: 0.8rem;
       opacity: 0.75;
     }
 
-    /* Viewer = scrollzon (på de flesta lägen) */
     .viewer {
       position: relative;
-      overflow: auto;
+      overflow: hidden;           /* inget scroll här – albumet får plats i höjd */
       display: flex;
       justify-content: center;
-      align-items: flex-start;
+      align-items: center;
       padding: 6px;
     }
 
     #book {
       width: 100%;
       max-width: 1400px;
-      height: auto;   /* PageFlip skalar rätt */
+      height: 100%;
+      max-height: 100%;          /* fyll viewer, men aldrig högre än viewer */
+      margin: 0 auto;
       background: #111;
+      box-shadow: 0 10px 30px rgba(0,0,0,.6);
       border-radius: 8px;
       overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,.6);
       transition: transform 0.15s ease-out;
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: none;        /* vi styr drag själva när zoom > 1 */
     }
 
     #panLayer {
       position: absolute;
       inset: 0;
-      pointer-events: none;
+      pointer-events: none;      /* aktiveras i JS när zoom > 1 */
       touch-action: none;
       -webkit-user-select: none;
       user-select: none;
     }
 
-    /* Loader */
     #loader {
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at center, rgba(20,20,20,.9) 0, rgba(0,0,0,.85) 60%);
       display: grid;
       place-items: center;
+      background: radial-gradient(circle at center, rgba(20,20,20,.9) 0, rgba(0,0,0,.85) 60%);
+      color: #ddd;
+      font-size: 1rem;
       z-index: 10;
+      text-align: center;
+      padding: 16px;
     }
+
+    progress {
+      width: 240px;
+      max-width: 70vw;
+      height: 8px;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    progress::-webkit-progress-bar { background-color: #333; }
+    progress::-webkit-progress-value { background-color: #f0f0f0; }
+    progress::-moz-progress-bar { background-color: #f0f0f0; }
 
     .controls {
       display: flex;
@@ -96,7 +127,7 @@
       color: #fff;
       border: 1px solid #3a3a3a;
       border-radius: 999px;
-      padding: 6px 12px;
+      padding: 6px 10px;
       cursor: pointer;
       font-size: 0.9rem;
       display: inline-flex;
@@ -104,39 +135,68 @@
       gap: 4px;
       touch-action: manipulation;
     }
+
+    button.small {
+      padding: 4px 8px;
+      font-size: 0.75rem;
+    }
+
     button:hover { background: #333; }
     button:active { transform: scale(0.97); }
 
+    footer .hint {
+      font-size: 0.8rem;
+      opacity: 0.8;
+    }
+
     @media (max-width: 768px) {
       header, footer {
-        flex-direction: column;
-        gap: 6px;
+        padding: 6px 8px;
       }
-      header .hint { display: false; }
-      .controls { justify-content: center; }
-      button { flex: 1 1 auto; }
+
+      header {
+        flex-direction: row;
+      }
+
+      header .hint {
+        display: none; /* spara höjd på mobil */
+      }
+
+      .controls {
+        justify-content: center;
+        flex-wrap: nowrap;  /* vi försöker hålla allt på EN rad */
+      }
+
+      button {
+        font-size: 0.8rem;
+        padding: 5px 8px;
+      }
+
+      button.small {
+        font-size: 0.7rem;
+        padding: 3px 6px;
+      }
 
       #book {
         max-width: 100%;
       }
-    }
 
-    /* Speciellt för små skärmar i LANDSKAP:
-       - begränsa höjden ännu mer
-       - ingen scroll i viewer, allt sköts via zoom/pan */
-    @media (max-width: 900px) and (orientation: landscape) {
-      .viewer {
-        overflow: hidden;
+      footer {
+        flex-direction: row;
         align-items: center;
+        justify-content: space-between;
+        gap: 6px;
       }
-      #book {
-        max-height: 60vh;  /* försök rymma albumet mellan header & footer */
+
+      footer .hint {
+        text-align: right;
+        font-size: 0.75rem;
+        white-space: nowrap;
       }
     }
   </style>
 </head>
 <body>
-
 <div class="wrap">
   <header>
     <div>📖 <strong id="albumTitle">Album</strong></div>
@@ -157,14 +217,14 @@
   </div>
 
   <footer>
-    <div class="controls" id="controlRow">
+    <div class="controls">
       <button id="prev">← Föregående</button>
       <button id="next">Nästa →</button>
       <button id="zoomOut">– Zoom</button>
       <button id="zoomIn">+ Zoom</button>
-      <button id="zoomReset">↺ Reset zoom</button>
+      <button id="zoomReset" class="small">↺ Reset</button>
       <button id="fullscreen">⛶ Helskärm</button>
-      <button onclick="location.href='index.html'">🏠 Tillbaka</button>
+      <button id="backBtn" class="small" onclick="location.href='index.html'">🏠 Tillbaka</button>
     </div>
     <div class="hint">
       Sida <span id="page">–</span> / <span id="pages">–</span>
@@ -178,51 +238,61 @@
 (async function () {
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-  // --- Album-id från URL ---
+  // --- 1. Hämta album-id ---
   const params = new URLSearchParams(window.location.search);
   const albumId = params.get("album");
   if (!albumId) {
-    document.getElementById("loaderText").textContent = "Inget album angivet.";
+    document.getElementById("loaderText").textContent = "Inget album angivet (?album=...).";
     return;
   }
 
-  // --- Läs config.json ---
+  // --- 2. Läs config.json ---
   let config;
   try {
     const res = await fetch(`${albumId}/config.json`);
-    if (!res.ok) throw new Error();
+    if (!res.ok) throw new Error("HTTP " + res.status);
     config = await res.json();
   } catch (e) {
-    document.getElementById("loaderText").textContent = "Fel i config.json.";
+    console.error(e);
+    document.getElementById("loaderText").textContent = "Kunde inte läsa albumets konfiguration.";
     return;
   }
 
   const title      = config.title || albumId;
-  const PAGE_COUNT = config.pageCount;
+  const PAGE_COUNT = config.pageCount || 0;
   const IMAGE_PATH = config.imagePath || "images";
   const pattern    = config.filePattern || "page-{n}.jpg";
 
   function buildFileName(i) {
+    const n   = String(i);
+    const nn  = n.padStart(2, "0");
+    const nnn = n.padStart(3, "0");
     return pattern
-      .replace("{nnn}", String(i).padStart(3, "0"))
-      .replace("{nn}",  String(i).padStart(2, "0"))
-      .replace("{n}",   String(i));
+      .replace("{nnn}", nnn)
+      .replace("{nn}",  nn)
+      .replace("{n}",   n);
   }
 
   const FILE_PATTERN = i => `${albumId}/${IMAGE_PATH}/${buildFileName(i)}`;
 
   document.getElementById("albumTitle").textContent = title;
   document.title = `${title} – bläddringsalbum`;
-  document.getElementById("pages").textContent = PAGE_COUNT;
 
-  const loader = document.getElementById("loader");
-  const prog   = document.getElementById("prog");
-  const status = document.getElementById("status");
+  const loader   = document.getElementById("loader");
+  const prog     = document.getElementById("prog");
+  const status   = document.getElementById("status");
+  const pageEl   = document.getElementById("page");
+  const pagesEl  = document.getElementById("pages");
+  const bookEl   = document.getElementById("book");
+  const panLayer = document.getElementById("panLayer");
 
+  pagesEl.textContent = PAGE_COUNT.toString();
+
+  // --- 3. Preload första sidor ---
   const FIRST_PRELOAD = 8;
-  const images = Array.from({ length: PAGE_COUNT }, (_, i) => FILE_PATTERN(i + 1));
-
+  const images = Array.from({ length: PAGE_COUNT }, (_, idx) => FILE_PATTERN(idx + 1));
   let loaded = 0;
+
   function preloadImage(src) {
     return new Promise(resolve => {
       const img = new Image();
@@ -231,7 +301,7 @@
       img.src = src;
     }).then(() => {
       loaded++;
-      const need = Math.min(FIRST_PRELOAD, PAGE_COUNT);
+      const need = Math.min(FIRST_PRELOAD, PAGE_COUNT) || 1;
       const pct = Math.round((loaded / need) * 100);
       prog.value = pct;
       status.textContent = pct + "%";
@@ -239,110 +309,165 @@
   }
 
   await Promise.all(images.slice(0, FIRST_PRELOAD).map(preloadImage));
+  prog.value = 100;
   status.textContent = "100%";
 
-  // --- PageFlip ---
-  const bookEl = document.getElementById("book");
+  if (!window.St || !St.PageFlip) {
+    loader.innerHTML = "<div style='text-align:center'>Kan inte starta blädderalbumet (PageFlip saknas).</div>";
+    return;
+  }
 
+  // --- 4. Initiera PageFlip ---
   const pageFlip = new St.PageFlip(bookEl, {
     width: 800,
     height: 1100,
-    size: "stretch",
-    autoSize: true,
+    size: "stretch",   // anpassa inne i #book (som är begränsad av viewer)
     minWidth: 300,
     minHeight: 400,
-    showCover: true
+    maxWidth: 2000,
+    maxHeight: 2600,
+    showCover: true,
+    drawShadow: true,
+    autoSize: true,
+    mobileScrollSupport: false
   });
 
   pageFlip.loadFromImages(images);
   loader.style.display = "none";
 
-  const pageEl  = document.getElementById("page");
-  pageEl.textContent = pageFlip.getCurrentPageIndex() + 1;
-
+  pageEl.textContent = (pageFlip.getCurrentPageIndex() + 1).toString();
   pageFlip.on("flip", e => {
-    pageEl.textContent = e.data + 1;
+    pageEl.textContent = (e.data + 1).toString();
   });
 
-  // --- Zoom + Pan ---
-  let zoom = 1, panX = 0, panY = 0;
-  const panLayer = document.getElementById("panLayer");
+  // --- 5. Zoom + panorering ---
+  let zoom = 1;
+  let panX = 0;
+  let panY = 0;
+
+  function resetView() {
+    zoom = 1;
+    panX = 0;
+    panY = 0;
+    panLayer.style.pointerEvents = "none";
+    bookEl.style.transformOrigin = "center center";
+    bookEl.style.transform = "translate(0px, 0px) scale(1)";
+  }
 
   function updateTransform() {
     const w = bookEl.clientWidth;
     const h = bookEl.clientHeight;
 
+    if (zoom <= 1) {
+      resetView();
+      return;
+    }
+
     const maxX = (w * (zoom - 1)) / 2;
     const maxY = (h * (zoom - 1)) / 2;
 
-    if (zoom <= 1) {
-      zoom = 1;
-      panX = 0;
-      panY = 0;
-      panLayer.style.pointerEvents = "none";
-    } else {
-      panX = clamp(panX, -maxX, maxX);
-      panY = clamp(panY, -maxY, maxY);
-      panLayer.style.pointerEvents = "auto";
-    }
+    panX = clamp(panX, -maxX, maxX);
+    panY = clamp(panY, -maxY, maxY);
 
+    panLayer.style.pointerEvents = "auto";
+    bookEl.style.transformOrigin = "center center";
     bookEl.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
   }
 
-  document.getElementById("zoomIn").onclick = () => {
+  document.getElementById("zoomIn").addEventListener("click", () => {
     zoom = clamp(zoom + 0.2, 1, 2.5);
     updateTransform();
-  };
-  document.getElementById("zoomOut").onclick = () => {
+  });
+
+  document.getElementById("zoomOut").addEventListener("click", () => {
     zoom = clamp(zoom - 0.2, 1, 2.5);
     updateTransform();
-  };
-  document.getElementById("zoomReset").onclick = () => {
-    zoom = 1;
-    panX = 0;
-    panY = 0;
-    updateTransform();
-  };
+  });
 
-  // Pan (touch & mus)
-  let dragging = false, startX, startY, baseX, baseY;
+  document.getElementById("zoomReset").addEventListener("click", () => {
+    resetView();
+  });
+
+  // Pan via pointerevents
+  let isPanning = false;
+  let startX = 0;
+  let startY = 0;
+  let startPanX = 0;
+  let startPanY = 0;
+  let activePointerId = null;
 
   panLayer.addEventListener("pointerdown", e => {
     if (zoom <= 1) return;
-    dragging = true;
+    isPanning = true;
+    activePointerId = e.pointerId;
     startX = e.clientX;
     startY = e.clientY;
-    baseX = panX;
-    baseY = panY;
-    panLayer.setPointerCapture(e.pointerId);
+    startPanX = panX;
+    startPanY = panY;
+    e.preventDefault();
+    e.stopPropagation();
+    panLayer.setPointerCapture(activePointerId);
   });
 
   panLayer.addEventListener("pointermove", e => {
-    if (!dragging) return;
-    panX = baseX + (e.clientX - startX);
-    panY = baseY + (e.clientY - startY);
+    if (!isPanning || e.pointerId !== activePointerId) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    panX = startPanX + dx;
+    panY = startPanY + dy;
     updateTransform();
   });
 
-  panLayer.addEventListener("pointerup", () => dragging = false);
-  panLayer.addEventListener("pointercancel", () => dragging = false);
-
-  // --- Helskärm på desktop, dold på touch ---
-  const fullscreenBtn = document.getElementById("fullscreen");
-  const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
-  if (isTouch) {
-    fullscreenBtn.style.display = "none";
-  } else {
-    fullscreenBtn.onclick = () => {
-      const el = document.documentElement;
-      if (!document.fullscreenElement) el.requestFullscreen?.();
-      else document.exitFullscreen?.();
-    };
+  function endPan(e) {
+    if (!isPanning || (activePointerId !== null && e.pointerId !== activePointerId)) return;
+    isPanning = false;
+    if (activePointerId !== null) {
+      try { panLayer.releasePointerCapture(activePointerId); } catch (_) {}
+    }
+    activePointerId = null;
   }
 
-  // Navigering
-  document.getElementById("prev").onclick = () => pageFlip.flipPrev();
-  document.getElementById("next").onclick = () => pageFlip.flipNext();
+  panLayer.addEventListener("pointerup", endPan);
+  panLayer.addEventListener("pointercancel", endPan);
+  panLayer.addEventListener("pointerleave", e => {
+    if (!isPanning) return;
+    endPan(e);
+  });
+
+  // --- 6. Resize: låt PageFlip anpassa sig, behåll vy ---
+  window.addEventListener("resize", () => {
+    pageFlip.update();
+    // Behåll zoom/pan, men se till att albumet fortfarande ryms
+    updateTransform();
+  });
+
+  // --- 7. Helskärm bara på icke-touch (desktop) ---
+  const fullscreenBtn = document.getElementById("fullscreen");
+  const isTouchDevice = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
+  if (isTouchDevice) {
+    fullscreenBtn.style.display = "none";
+  } else {
+    fullscreenBtn.addEventListener("click", () => {
+      const el = document.documentElement;
+      if (!document.fullscreenElement &&
+          !document.webkitFullscreenElement) {
+        (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+      } else {
+        (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      }
+    });
+  }
+
+  // --- 8. Navigering + tangentbord ---
+  document.getElementById("prev").addEventListener("click", () => pageFlip.flipPrev());
+  document.getElementById("next").addEventListener("click", () => pageFlip.flipNext());
+
+  window.addEventListener("keydown", e => {
+    if (e.key === "ArrowLeft")  pageFlip.flipPrev();
+    if (e.key === "ArrowRight") pageFlip.flipNext();
+    if (e.key === "+") { zoom = clamp(zoom + 0.2, 1, 2.5); updateTransform(); }
+    if (e.key === "-") { zoom = clamp(zoom - 0.2, 1, 2.5); updateTransform(); }
+  });
 
 })();
 </script>
