@@ -58,11 +58,11 @@
     .viewer {
       position: relative;
       flex: 1 1 auto;
-      overflow: auto;           /* här scrollar du om albumet är högre än utrymmet */
+      overflow: auto;           /* scroll här om albumet är högre än utrymmet */
       display: flex;
       justify-content: center;
       align-items: flex-start;
-      padding: 6px 6px 70px;    /* extra botten-padding så albumet inte hamnar under footern */
+      padding: 6px 6px 80px;    /* extra botten-padding så albumet inte hamnar under footern */
     }
 
     #book {
@@ -178,9 +178,16 @@
         display: none;       /* spara lite höjd på mobil */
       }
 
+      /* Footer i två "rader": knappar överst, sidinfo under */
+      footer {
+        padding: 6px 6px;
+        flex-direction: column;
+        align-items: stretch;
+      }
+
       .controls {
         justify-content: center;
-        flex-wrap: nowrap;  /* försök hålla på en rad */
+        flex-wrap: wrap;    /* tillåt två rader knappar */
       }
 
       button {
@@ -197,12 +204,15 @@
         max-width: 100%;
       }
 
-      footer {
-        padding: 6px 6px;
+      footer .hint {
+        text-align: center;
+        font-size: 0.7rem;
+        width: 100%;
       }
 
-      footer .hint {
-        font-size: 0.7rem;
+      /* lite extra marginal så albumet inte hamnar bakom högre footer */
+      .viewer {
+        padding-bottom: 100px;
       }
     }
   </style>
@@ -273,7 +283,7 @@
   const title      = config.title || albumId;
   const PAGE_COUNT = config.pageCount || 0;
   const IMAGE_PATH = config.imagePath || "images";
-  const pattern    = config.filePattern || "page-{n}.jpg";
+  const pattern    = config.filePattern || "page-{n}.jpg`;
 
   function buildFileName(i) {
     const n   = String(i);
@@ -297,7 +307,6 @@
   const pagesEl  = document.getElementById("pages");
   const bookEl   = document.getElementById("book");
   const panLayer = document.getElementById("panLayer");
-  const viewerEl = document.getElementById("viewer");
 
   pagesEl.textContent = PAGE_COUNT.toString();
 
@@ -448,10 +457,9 @@
     endPan(e);
   });
 
-  // --- 6. Resize: PageFlip uppdateras, vi justerar eventuell zoom ---
+  // --- 6. Resize: uppdatera PageFlip, håll zoom inom rimliga gränser ---
   window.addEventListener("resize", () => {
     pageFlip.update();
-    // behåll zoom och pan inom rimliga gränser efter layoutändring
     if (zoom > 1) updateTransform();
   });
 
