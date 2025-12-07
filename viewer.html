@@ -35,6 +35,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 8px;
     }
     footer { border-bottom: none; border-top: 1px solid #222; }
 
@@ -43,7 +44,7 @@
       opacity: 0.75;
     }
 
-    /* Viewer = scrollzon för mobil + desktop */
+    /* Viewer = scrollzon (på de flesta lägen) */
     .viewer {
       position: relative;
       overflow: auto;
@@ -111,12 +112,26 @@
         flex-direction: column;
         gap: 6px;
       }
-      header .hint { display: none; }
+      header .hint { display: false; }
       .controls { justify-content: center; }
       button { flex: 1 1 auto; }
 
-      /* Albumet ska aldrig växa för stort på mobil */
-      #book { max-width: 100%; }
+      #book {
+        max-width: 100%;
+      }
+    }
+
+    /* Speciellt för små skärmar i LANDSKAP:
+       - begränsa höjden ännu mer
+       - ingen scroll i viewer, allt sköts via zoom/pan */
+    @media (max-width: 900px) and (orientation: landscape) {
+      .viewer {
+        overflow: hidden;
+        align-items: center;
+      }
+      #book {
+        max-height: 60vh;  /* försök rymma albumet mellan header & footer */
+      }
     }
   </style>
 </head>
@@ -161,7 +176,6 @@
 
 <script>
 (async function () {
-
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
   // --- Album-id från URL ---
@@ -201,7 +215,6 @@
   document.title = `${title} – bläddringsalbum`;
   document.getElementById("pages").textContent = PAGE_COUNT;
 
-  // --- Förladdning ---
   const loader = document.getElementById("loader");
   const prog   = document.getElementById("prog");
   const status = document.getElementById("status");
@@ -210,7 +223,6 @@
   const images = Array.from({ length: PAGE_COUNT }, (_, i) => FILE_PATTERN(i + 1));
 
   let loaded = 0;
-
   function preloadImage(src) {
     return new Promise(resolve => {
       const img = new Image();
@@ -245,9 +257,11 @@
   pageFlip.loadFromImages(images);
   loader.style.display = "none";
 
-  document.getElementById("page").textContent = pageFlip.getCurrentPageIndex() + 1;
+  const pageEl  = document.getElementById("page");
+  pageEl.textContent = pageFlip.getCurrentPageIndex() + 1;
+
   pageFlip.on("flip", e => {
-    document.getElementById("page").textContent = e.data + 1;
+    pageEl.textContent = e.data + 1;
   });
 
   // --- Zoom + Pan ---
@@ -275,9 +289,20 @@
     bookEl.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
   }
 
-  document.getElementById("zoomIn").onclick = () => { zoom = clamp(zoom + 0.2, 1, 2.5); updateTransform(); };
-  document.getElementById("zoomOut").onclick = () => { zoom = clamp(zoom - 0.2, 1, 2.5); updateTransform(); };
-  document.getElementById("zoomReset").onclick = () => { zoom = 1; panX = 0; panY = 0; updateTransform(); };
+  document.getElementById("zoomIn").onclick = () => {
+    zoom = clamp(zoom + 0.2, 1, 2.5);
+    updateTransform();
+  };
+  document.getElementById("zoomOut").onclick = () => {
+    zoom = clamp(zoom - 0.2, 1, 2.5);
+    updateTransform();
+  };
+  document.getElementById("zoomReset").onclick = () => {
+    zoom = 1;
+    panX = 0;
+    panY = 0;
+    updateTransform();
+  };
 
   // Pan (touch & mus)
   let dragging = false, startX, startY, baseX, baseY;
@@ -302,18 +327,20 @@
   panLayer.addEventListener("pointerup", () => dragging = false);
   panLayer.addEventListener("pointercancel", () => dragging = false);
 
-  // --- Helskärm (endast desktop)
+  // --- Helskärm på desktop, dold på touch ---
   const fullscreenBtn = document.getElementById("fullscreen");
   const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
-  if (isTouch) fullscreenBtn.style.display = "none";
+  if (isTouch) {
+    fullscreenBtn.style.display = "none";
+  } else {
+    fullscreenBtn.onclick = () => {
+      const el = document.documentElement;
+      if (!document.fullscreenElement) el.requestFullscreen?.();
+      else document.exitFullscreen?.();
+    };
+  }
 
-  fullscreenBtn.onclick = () => {
-    const el = document.documentElement;
-    if (!document.fullscreenElement) el.requestFullscreen?.();
-    else document.exitFullscreen?.();
-  };
-
-  // --- Navigering ---
+  // Navigering
   document.getElementById("prev").onclick = () => pageFlip.flipPrev();
   document.getElementById("next").onclick = () => pageFlip.flipNext();
 
