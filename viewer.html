@@ -17,7 +17,7 @@
       color: #f0f0f0;
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
                    Roboto, Helvetica, Arial, sans-serif;
-      overflow: hidden; /* vi använder bara viewer-scroll på mobil */
+      overflow: hidden; /* vi använder viewer-scroll på mobil */
     }
 
     .wrap {
@@ -58,17 +58,19 @@
     .viewer {
       position: relative;
       flex: 1 1 auto;
-      overflow: hidden;         /* desktop: inget scroll här */
+      overflow: auto;           /* tillåt scroll om något ändå blir större */
       display: flex;
       justify-content: center;
       align-items: flex-start;
-      padding: 6px 6px 80px;    /* lite luft under albumet */
+      padding: 6px 6px 80px;    /* lite luft under albumet (pga footer) */
     }
 
     #book {
       width: 100%;
       max-width: 1400px;
-      height: auto;             /* PageFlip styr höjd/aspekt */
+      height: auto;             
+      max-height: calc(100vh - 160px); 
+      /* 100vh minus ~plats för header + footer → hela uppslaget syns utan scroll i helskärm */
       margin: 0 auto;
       background: #111;
       box-shadow: 0 10px 30px rgba(0,0,0,.6);
@@ -77,13 +79,13 @@
       transition: transform 0.15s ease-out;
       -webkit-user-select: none;
       user-select: none;
-      touch-action: none;       /* vi styr drag själva i zoom-läge */
+      touch-action: none;       
     }
 
     #panLayer {
-      position: fixed;          /* ligger ovanpå #book visuellt */
+      position: fixed;          
       inset: 0;
-      pointer-events: none;     /* aktiveras i JS när zoom > 1 */
+      pointer-events: none;     
       touch-action: none;
       -webkit-user-select: none;
       user-select: none;
@@ -238,6 +240,7 @@
 
       #book {
         max-width: 100%;
+        /* max-height-begränsningen gäller fortfarande, men i porträtt är det oftast lugnt */
       }
 
       footer .hint {
@@ -504,7 +507,7 @@
     updateOrientationOverlay();
   });
 
-  // --- 7. Helskärm bara desktop, och fixa scroll där ---
+  // --- 7. Helskärm bara desktop ---
   const fullscreenBtn = document.getElementById("fullscreen");
   const isTouchDevice = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
 
@@ -522,7 +525,7 @@
     });
 
     document.addEventListener("fullscreenchange", () => {
-      // Nollställ scroll i viewer + vy när vi går in/ur helskärm
+      // Nollställ vy när vi går in/ur helskärm
       viewerEl.scrollTop = 0;
       viewerEl.scrollLeft = 0;
       resetView();
