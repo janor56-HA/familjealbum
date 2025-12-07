@@ -17,7 +17,7 @@
       color: #f0f0f0;
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
                    Roboto, Helvetica, Arial, sans-serif;
-      overflow: hidden; /* vi använder bara viewer-scroll */
+      overflow: hidden; /* vi använder bara viewer-scroll på mobil */
     }
 
     .wrap {
@@ -58,11 +58,11 @@
     .viewer {
       position: relative;
       flex: 1 1 auto;
-      overflow: auto;           /* scroll här om albumet är högre än utrymmet */
+      overflow: hidden;         /* desktop: inget scroll här */
       display: flex;
       justify-content: center;
       align-items: flex-start;
-      padding: 6px 6px 80px;    /* extra botten-padding så albumet inte hamnar under footern */
+      padding: 6px 6px 80px;    /* lite luft under albumet */
     }
 
     #book {
@@ -169,6 +169,36 @@
       flex-shrink: 0;
     }
 
+    /* Overlay för att "stänga av" landskap på mobil */
+    .rotate-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.95);
+      color: #f5f5f5;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      z-index: 100;
+      padding: 20px;
+      font-size: 1rem;
+    }
+
+    .rotate-overlay span {
+      display: block;
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+    }
+
+    body.force-portrait .rotate-overlay {
+      display: flex;
+    }
+
+    body.force-portrait .viewer,
+    body.force-portrait footer {
+      visibility: hidden; /* dölj album + knappar i landskap på touch-enheter */
+    }
+
     @media (max-width: 768px) {
       header {
         padding: 6px 8px;
@@ -176,6 +206,12 @@
 
       header .hint {
         display: none;       /* spara lite höjd på mobil */
+      }
+
+      /* Mobil: vi vill kunna scrolla viewer för att se top/botten */
+      .viewer {
+        overflow: auto;
+        padding-bottom: 100px;  /* extra luft pga två-radig footer */
       }
 
       /* Footer i två "rader": knappar överst, sidinfo under */
@@ -209,11 +245,6 @@
         font-size: 0.7rem;
         width: 100%;
       }
-
-      /* lite extra marginal så albumet inte hamnar bakom högre footer */
-      .viewer {
-        padding-bottom: 100px;
-      }
     }
   </style>
 </head>
@@ -238,6 +269,14 @@
     </div>
   </div>
 
+  <!-- Overlay för mobil-landskap -->
+  <div class="rotate-overlay" id="rotateOverlay">
+    <div>
+      <span>📱↻</span>
+      <div>Vänd telefonen till stående läge för att se albumet.</div>
+    </div>
+  </div>
+
   <footer>
     <div class="controls">
       <button id="prev">← Föregående</button>
@@ -259,6 +298,7 @@
 <script>
 (async function () {
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const viewerEl = document.getElementById("viewer");
 
   // --- 1. Album-id ---
   const params = new URLSearchParams(window.location.search);
@@ -461,9 +501,10 @@
   window.addEventListener("resize", () => {
     pageFlip.update();
     if (zoom > 1) updateTransform();
+    updateOrientationOverlay();
   });
 
-  // --- 7. Helskärm bara desktop, göm på touch ---
+  // --- 7. Helskärm bara desktop, och fixa scroll där ---
   const fullscreenBtn = document.getElementById("fullscreen");
   const isTouchDevice = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
 
@@ -472,11 +513,19 @@
   } else {
     fullscreenBtn.addEventListener("click", () => {
       const el = document.documentElement;
-      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      const isFull = document.fullscreenElement || document.webkitFullscreenElement;
+      if (!isFull) {
         (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
       } else {
         (document.exitFullscreen || document.webkitExitFullscreen).call(document);
       }
+    });
+
+    document.addEventListener("fullscreenchange", () => {
+      // Nollställ scroll i viewer + vy när vi går in/ur helskärm
+      viewerEl.scrollTop = 0;
+      viewerEl.scrollLeft = 0;
+      resetView();
     });
   }
 
@@ -490,6 +539,24 @@
     if (e.key === "+") { zoom = clamp(zoom + 0.2, 1, 2.5); updateTransform(); }
     if (e.key === "-") { zoom = clamp(zoom - 0.2, 1, 2.5); updateTransform(); }
   });
+
+  // --- 9. Stäng av mobil-landskap med overlay ---
+  const rotateOverlay = document.getElementById("rotateOverlay");
+
+  function updateOrientationOverlay() {
+    if (!isTouchDevice) {
+      document.body.classList.remove("force-portrait");
+      return;
+    }
+    const isLandscape = window.innerWidth > window.innerHeight;
+    if (isLandscape) {
+      document.body.classList.add("force-portrait");
+    } else {
+      document.body.classList.remove("force-portrait");
+    }
+  }
+
+  updateOrientationOverlay();
 
 })();
 </script>
