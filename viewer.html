@@ -148,6 +148,10 @@
     progress::-moz-progress-bar { background-color: #f0f0f0; }
 
     @media (max-width: 768px) {
+      /* Dölj Helskärm-knappen på mobil */
+      #fullscreen {
+        display: none !important;
+      }
       /* Gör plats för en fast footer längst ned */
       .wrap {
         padding-bottom: 80px; /* ungefärlig höjd på footer på mobil */
